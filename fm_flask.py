@@ -171,7 +171,7 @@ def see_comps():
     comps = Competitions.query.all()
     return render_template('upcoming_comps.html',user_name=session['name'],comps=comps)
 
-@app.route('/competitions/<comp>/')
+@app.route('/competitions/<comp>')
 def competition_view(comp):
     competition = Competitions.query.filter_by(id=comp).first()
     if competition:
