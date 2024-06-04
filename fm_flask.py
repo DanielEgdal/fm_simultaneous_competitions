@@ -245,6 +245,7 @@ def edit_registration_status(comp,venue_id,rid):
     db.session.commit()
     return redirect(url_for('venue_registration_overview',comp=comp,venue_id=venue_id))
 
+# TODO Sort the venues
 @app.route('/competitions/<comp>/venues')
 def comp_venues(comp):
     competition = Competitions.query.filter_by(id=comp).first()
@@ -358,7 +359,7 @@ def register(comp):
             reg.created_at = timestamp
             reg.status = status
         db.session.commit()
-        # TODO some flush saying registration added
+        flash(f'You have submitted your registration. The current status is {status}')
         return redirect(url_for('comp_venues',comp=comp))
 
 

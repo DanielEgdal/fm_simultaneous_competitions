@@ -4,7 +4,13 @@
 
 <a href="/competitions/{{competition.id}}"><h1>{{competition.name}}</h1></a>
 
-
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    {% for message in messages %}
+      <p class="medlem_info flash_info">{{ message }}</p>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
 
 {% for venue in venues %}
     {% if admin %}
@@ -19,6 +25,7 @@
     <p>Address: {{venue.address}}</p>
     <p>Timezone: UTC{{venue.timezone}}</p>
     <p>Registration fee and details: {{venue.registration_fee_text}}</p>
+    <p>Registrations for this venue {{"requires manual acceptance by the delegate." if not venue.accept_registrations_automatically else "are accepted automatically if there is space for it."}}</p>
     <table class="centered">
         <tr>
             <th>Name</th>

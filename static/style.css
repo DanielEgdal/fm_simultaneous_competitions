@@ -101,6 +101,12 @@ b {
   color: #333;
 }
 
+.flash_info{
+  background-color: rgb(145, 92, 235);
+  color: #212020;
+}
+
+
 .non_member{
   background-color: rgb(222, 72, 12);
 }
