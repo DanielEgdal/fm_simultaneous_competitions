@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<a href="/competitions/{{competition.id}}"><h1>{{competition.name}}</h1></a>
+
+<p>Submit your venue information below</p>
+
+<form method="post" action="/competitions/{{competition.id}}/venues/new">
+  <p> Country
+    <input type="text" name="country">
+  </p>
+  <p> City, State (if needed)
+    <input type="text" name="city">
+  </p>
+  <p> Address (you can write private residence)
+    <input type="text" name="address">
+  </p>
+  <p> Competitor limit
+    <input type="number" name="limit">
+  </p>
+  <p> Timezone (UTC notation, but only include the +- and number, e.g. `+1`)
+    <input type="text" name="timezone">
+  </p>
+  <p> Registration fee and details
+    <input type="text" name="reg_fee">
+  </p>
+  <p> Accept registrations automatically
+    <input type="checkbox" name="auto_accept" checked>
+  </p>
+  
+    <button type="submit">Submit</button>
+  </form>
+
+{% endblock %}

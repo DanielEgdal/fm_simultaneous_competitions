@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<a href="/competitions/{{competition.id}}"><h1>{{competition.name}}</h1></a>
+<p>Admin overview of registrations for <b>{{venue}}</b></p>
+
+<p>Remember you currently have <b>{{am_accepted}}</b> accepted of the limit <b>{{venue.competitor_limit}}</b></p>
+
+
+<table class="centered">
+    <tr>
+        <th>Name</th>
+        <th>Registration status</th>
+    </tr>
+    {% for registration in registrations %}
+        <tr>
+            <td >{{ registration.users.name }}</td>
+            <td >{{ registration.status }}</td>
+            <!-- <td><a class="admin_click" href="">Edit</a></td> -->
+            <td>
+            <form method="post" action="/competitions/{{competition.id}}/venues/{{venue.id}}/registrations/{{registration.id}}">
+                <select name="new_status">
+                  <option value=""></option>
+                <option value="accepted"">Accept</option>
+                <option value="pending"">Set to pending</option>
+                <option value="deleted"">Delete</option>
+                </select>
+                <p></p>
+                <button type="submit">Submit change</button>
+              </form>
+            </td>
+        </tr>
+    {% endfor %}
+</table>
+<hr>
+
+{% endblock %}

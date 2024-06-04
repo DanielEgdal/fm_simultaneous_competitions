@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<a href="/competitions/{{competition.id}}"><h1>{{competition.name}}</h1></a>
+
+{% if registration%}
+  <p>You are already registered for {{registration.venues}} with a status of {{registration.status}}.
+
+    {{"The venue requires the delegate to manually accept your registration." if not registration.venues.accept_registrations_automatically}}
+
+  </p>
+<p>Submitting the form below will change your registration.</p>
+{% endif %}
+
+<p>Registration opens <b>{{competition.registration_open}}</b> UTC. Registration closes <b>{{competition.registration_close}}</b> UTC.</p>
+
+{% if opens_in <= 0 and closes_in >= 0%}
+
+<p>Registration closes in {{ closes_in }} seconds.</p>
+
+  <p>Choose your venue below</p>
+
+  <form method="post" action="/competitions/{{competition.id}}/register">
+      <select name="venues">
+        <option value=""></option>
+        {% for venue in venues %}
+          <option value="{{venue.id}}"">{{venue}}</option>
+        {% endfor %}
+      </select>
+      <p></p>
+      <button type="submit">Register</button>
+    </form>
+
+{% elif opens_in.total_seconds() > 0 %}
+
+<p>Registration opens in {{opens_in}} seconds.</p>
+
+{% else %}
+
+<p>Registtration has already closed.</p>
+
+{% endif %}
+
+{% endblock %}

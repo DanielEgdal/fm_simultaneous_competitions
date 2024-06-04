@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FM Simulatenous Competitions</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="{{url_for('static',filename='logo.png')}}">
+    <link rel="stylesheet"  type="text/css" href="{{url_for('.static', filename='style.css')}}">
+    {% block extrahead %} {% endblock %}
+</head>
+<body>
+
+    <nav>
+        <a href="/" class="navbar-logo"><img src="{{url_for('static',filename='logo.png')}}">
+        <ul>
+            <li><a href="/competitions">Competition list</a></li>
+          {% if manager %}
+          <li><a href="/manager">Administrator</a></li>
+          {% endif %}
+            
+          {% if user_name %}
+          <li><a href="/logout">Log ud</a></li>
+          {% endif %}
+        </ul>
+    </nav>
+    <hr>
+
+    {% block content %} {% endblock %}
+    
+    
+</body>
+</html>

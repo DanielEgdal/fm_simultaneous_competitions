@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <p>Below are the upcoming WCA competitions which are fewest moves simultaneous competitions hosted on this site.</p>
+
+    <p>
+        <ul class="my_comps">
+        {% for comp in comps%}
+            <a href="competitions/{{comp.id}}">{{comp}}</a>
+        {% endfor %}
+        </ul>
+    </p>
+{% endblock %}

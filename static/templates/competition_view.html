@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1>{{competition.name}}</h1>
+    <p>There are currently {{venue_count}} venues!</p> 
+    <form action="/competitions/{{competition.id}}/venues">
+        <input type="submit" value="See venues" />
+    </form>
+
+    <p></p>
+
+    <form action="/competitions/{{competition.id}}/register">
+        <input type="submit" value="Go to the register page" />
+    </form>
+
+    {% if registration %}
+    <p class="medlem_info {{'active_member' if registration.status == 'accepted' else 'inactive_member'}}">You have submitted a registration for the venue  <b class=" {{'active_member' if registration.status == 'accepted' else 'inactive_member'}}">&nbsp;{{registration.venues}}</b>. 
+        The status of your registration is <b class="{{'active_member' if registration.status == 'accepted' else 'inactive_member'}}">&nbsp;{{registration.status}}</b></p>
+    {% endif %}
+
+    {% if manager_venue %}
+    <p>You are a manager of  <b>{{manager_venue.venues}}</b></p>
+    <form action="/competitions/{{competition.id}}/venues/{{manager_venue.venues.id}}/manager">
+        <input type="submit" value="Go to manage your venue" />
+    </form>
+    {% endif %}
+
+    {% if (delegate and not manager_venue) or admin %}
+    <p>As you are a Delegate, you can go to the page below to submit a new venue.</p>
+    <form action="/competitions/{{competition.id}}/venues/new">
+        <input type="submit" value="Go to create venue" />
+    </form>
+    {% endif %}
+{% endblock %}

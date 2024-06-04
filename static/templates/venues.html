@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<a href="/competitions/{{competition.id}}"><h1>{{competition.name}}</h1></a>
+
+
+
+{% for venue in venues %}
+    {% if admin %}
+        <p>
+            <a href="/competitions/{{competition.id}}/venues/{{venue.id}}/manager">{{venue}}</a>
+        </p>
+    {% else %}
+        <p>{{venue}}</p>
+    {% endif %}
+    <p>Delegates: {{",".join(delegates[loop.index0])}}</p>
+    <p>Competitor limit: {{venue.competitor_limit}}</p>
+    <p>Address: {{venue.address}}</p>
+    <p>Timezone: UTC{{venue.timezone}}</p>
+    <p>Registration fee and details: {{venue.registration_fee_text}}</p>
+    <table class="centered">
+        <tr>
+            <th>Name</th>
+            <th>Registration status</th>
+        </tr>
+    {% for registration in registrations[loop.index0] %}
+            <tr>
+                <td >{{ registration.users.name }}</td>
+                <td >{{ registration.status }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    <hr>
+
+{% endfor %}
+
+{% endblock %}

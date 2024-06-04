@@ -1,0 +1,3 @@
+secret.py
+instance/*
+**/__pycache__/*

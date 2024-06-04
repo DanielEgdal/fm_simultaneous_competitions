@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<a href="/competitions/{{competition.id}}"><h1>{{competition.name}}</h1></a>
+<p>You are currently mangaging the venue <b>{{venue}}</b></p>
+
+    <form action="/competitions/{{competition.id}}/venues/{{venue.id}}/registrations">
+        <input type="submit" value="Manage the registrations" />
+    </form>
+
+    <p></p>
+
+    <form action="/competitions/{{competition.id}}/venues/{{venue.id}}/edit">
+        <input type="submit" value="Edit your venue" />
+    </form>
+
+    <h2>Current Managers:</h2>
+    <table>
+        <tr>
+          <th>Navn</th>
+          <th>WCA ID</th>
+        </tr>
+        {% for manager in venue_managers %}
+        <tr>
+          <td>{{ manager.users.name }}</td>
+          <td>{{ manager.users.wca_id }}</td>
+          <td>
+            <form method="post" action="/competitions/{{competition.id}}/venues/{{venue.id}}/manager/delete/{{manager.manager_id}}">
+            <button type="submit">Delete manager</button>
+          </form>
+          </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Add Manager for this venue:</h2>
+    <p>Make sure they have logged into this website before you try to add them.</p>
+    <form action="/competitions/{{competition.id}}/venues/{{venue.id}}/manager" method="POST">
+      <label for="user_id">WCA ID:</label>
+      <input type="text" id="wcaid" name="wcaid"><br>
+      
+      <input type="submit" value="Submit">
+    </form>
+
+{% endblock %}
