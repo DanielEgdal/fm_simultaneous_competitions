@@ -104,7 +104,7 @@ def is_non_trainee_delegate(user):
 
 @app.route("/localhost")
 def localhost_login():
-    return redirect("https://www.worldcubeassociation.org/oauth/authorize?client_id=-BowqxQ4-RGEk8XdUGFb41AkWX_k1XSGiVJDDfm7k9M&redirect_uri=http%3A%2F%2Flocalhost%3A5000%2Fshow_token&response_type=token&scope=manage_competitions+public+email")
+    return redirect("https://www.worldcubeassociation.org/oauth/authorize?client_id=BI5F06shcLg2tNPbVJ431p3XLGlqzRcBYsDT6flLg2I&redirect_uri=http%3A%2F%2Flocalhost%3A5000%2Fshow_token&response_type=token&scope=manage_competitions+public+email+dob")
 
 @app.route('/logout',methods=['GET','POST'])
 def logout():
@@ -125,18 +125,23 @@ def process_token():
     me = get_me(session['token'])
     if me.status_code == 200:
         cont = json.loads(me.content)
+        print(cont)
         user_name = cont['me']['name']
         user_id = int(cont['me']['id'])
         user_wcaid = cont['me']['wca_id']
         user_mail = cont['me']['email']
         delegate_status = cont['me']['delegate_status']
+        gender = cont['me']['gender']
+        dob = Timestamp(cont['me']['dob'])
 
         user = Users(
                 id=user_id,
                 name=user_name,
                 wca_id=user_wcaid,
                 email=user_mail,
-                delegate_status=delegate_status
+                delegate_status=delegate_status,
+                gender=gender,
+                dob=dob
             )
         entry = Users.query.filter_by(id=user_id).first()
         print(entry)

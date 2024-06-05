@@ -12,11 +12,13 @@
     <tr>
         <th>Name</th>
         <th>Registration status</th>
+        <th>Email</th>
     </tr>
     {% for registration in registrations %}
         <tr>
             <td >{{ registration.users.name }}</td>
             <td >{{ registration.status }}</td>
+            <td>{{registration.users.email}}</td>
             <!-- <td><a class="admin_click" href="">Edit</a></td> -->
             <td>
             <form method="post" action="/competitions/{{competition.id}}/venues/{{venue.id}}/registrations/{{registration.id}}">
