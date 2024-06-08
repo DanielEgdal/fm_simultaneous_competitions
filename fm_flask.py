@@ -40,8 +40,14 @@ def is_admin():
     else:
         return False
     
+def is_organiser(competition_id):
+    return (session['id'] in CompetitionOrganizers.query.filter_by(competition_id=competition_id)) or is_admin()
+    
 def is_manager(venue_id):
-    return VenueManagers.query.filter_by(venue_id=venue_id,manager_id=session['id']).all() or is_admin()
+    venue_query = VenueManagers.query.filter_by(venue_id=venue_id)
+    is_manager_bool = venue_query.filter_by(manager_id=session['id']).first()
+    is_organiser_bool = is_organiser(venue_query.first().venues.competitions.id)
+    return is_manager_bool or is_organiser_bool or is_admin()
 
 
 def get_manager_for_venue(compid):
@@ -74,11 +80,14 @@ def delegate_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def is_logged_in():
+    return not (not session['id']) # If the value is set, turning into bool
+
 def logged_in_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not session['id']:
-            return render_template("error_page.html",error_str="You need to be a (non Trainee) Delegate")
+        if not is_logged_in():
+            return render_template("error_page.html",error_str="You need to be logged in to access this page.")
         return f(*args, **kwargs)
     return decorated_function
 
@@ -93,7 +102,10 @@ def give_name():
 
 @app.route('/')
 def home():
-    return render_template('index.html',user_name=session['name'])
+    if not is_logged_in():
+        return render_template('index.html',user_name=session['name'])
+    else:
+        return redirect(url_for('competitions'))
 
 def get_me(header):
     return requests.get("https://api.worldcubeassociation.org/me",headers=header)
@@ -125,7 +137,6 @@ def process_token():
     me = get_me(session['token'])
     if me.status_code == 200:
         cont = json.loads(me.content)
-        print(cont)
         user_name = cont['me']['name']
         user_id = int(cont['me']['id'])
         user_wcaid = cont['me']['wca_id']
@@ -144,7 +155,6 @@ def process_token():
                 dob=dob
             )
         entry = Users.query.filter_by(id=user_id).first()
-        print(entry)
         if entry: # Retuner
             entry = user # update their info
             db.session.commit()
@@ -158,21 +168,62 @@ def process_token():
         session['delegate'] = True if delegate_status and delegate_status != 'trainee_delegate' else False
     return "Du bliver omstillet til din konto."
 
-@app.route("/admin/import/<comp>")
-@admin_required # If this is removed, do safety checks
+def get_organisers_wcif(wcif):
+    organisers = []
+    for person in wcif['persons']:
+        for role in person['roles']:
+            if role == 'organizer':
+                organisers.append({'id':person['wcaUserId']})
+    return organisers
+
+@app.route("/competitions/<comp>/admin/import")
 def import_comp(comp):
-    comp = json.loads(requests.get(f"https://api.worldcubeassociation.org/competitions/{comp}").content)
-    reg_open = Timestamp(comp['registration_open'])
-    reg_close = Timestamp(comp['registration_close'])
+    escapedCompid = escape(comp)
+    if not re.match('^[a-zA-Z\d]{5,32}$',escapedCompid):
+        return render_template('error_page.html',error_str='Invalid compid format.')
+
+    if not is_organiser(escapedCompid):
+        return render_template('error_page.html',error_str='You are not an organiser of the competition.')
+
+    existing_comp = Competitions.query.filter_by(id=escapedCompid).first()
+
+    comp = json.loads(requests.get(f"https://api.worldcubeassociation.org/competitions/{escapedCompid}").content)
+    if 'error' in comp: # Comp is not yet announced. Use the WCIF
+        comp = json.loads(requests.get(f"https://api.worldcubeassociation.org/competitions/{escapedCompid}/wcif",headers=session['token']).content)
+        reg_open = Timestamp(comp['registrationInfo']['openTime'])
+        reg_close = Timestamp(comp['registrationInfo']['closeTime'])
+        start_date = Timestamp(comp['schedule']['startDate'])
+        organisers = get_organisers_wcif(comp)
+    else: # format for these fields is annoyingly different
+        reg_open = Timestamp(comp['registration_open'])
+        reg_close = Timestamp(comp['registration_close'])
+        start_date = Timestamp(comp['start_date'])
+        organisers = comp['organizers']
+
     name = comp['name']
     id = comp['id']
-    start_date = Timestamp(comp['start_date'])
-    db.session.add(Competitions(id=id,name=name,registration_open=reg_open,registration_close=reg_close,start_date=start_date))
+    
+    if not existing_comp:
+        db.session.add(Competitions(id=id,name=name,registration_open=reg_open,registration_close=reg_close,start_date=start_date))
+        for organiser in organisers:
+            orga_id = organiser['id']
+            db.session.add(CompetitionOrganizers(user_id=orga_id,competition_id=id))
+    else:
+        existing_comp.registration_open = reg_open
+        existing_comp.registration_close = reg_close
+        existing_comp.start_date = start_date
+        for organiser in organisers:
+            orga_id = organiser['id']
+            if CompetitionOrganizers.query.filter_by(user_id=orga_id).first():
+                continue
+            db.session.add(CompetitionOrganizers(user_id=orga_id,competition_id=id))
     db.session.commit()
-    return redirect(url_for('see_comps'))
+    return redirect(url_for('competition_view',comp=id))
+
+
 
 @app.route('/competitions')
-def see_comps():
+def competitions():
     comps = Competitions.query.all()
     return render_template('upcoming_comps.html',user_name=session['name'],comps=comps)
 
@@ -187,7 +238,7 @@ def competition_view(comp):
             registration = get_comp_registration(comp)
         
 
-        return render_template('competition_view.html',user_name=session['name'],competition=competition,venue_count=venue_count,delegate=session['delegate'],registration=registration,manager_venue=manager_venue, admin=is_admin())
+        return render_template('competition_view.html',user_name=session['name'],competition=competition,venue_count=venue_count,delegate=session['delegate'],registration=registration,manager_venue=manager_venue, admin=is_organiser(comp))
     else:
         return "Invalid competition ID"
     
@@ -250,12 +301,11 @@ def edit_registration_status(comp,venue_id,rid):
     db.session.commit()
     return redirect(url_for('venue_registration_overview',comp=comp,venue_id=venue_id))
 
-# TODO Sort the venues
 @app.route('/competitions/<comp>/venues')
 def comp_venues(comp):
     competition = Competitions.query.filter_by(id=comp).first()
 
-    venues = Venues.query.filter_by(competition_id=comp).all()
+    venues = Venues.query.filter_by(competition_id=comp).order_by(Venues.country).all()
     registrations = [Registrations.query.filter_by(venue_id=venue.id,status='accepted') for venue in venues]
     delegates = []
 
@@ -265,7 +315,7 @@ def comp_venues(comp):
             if manager.users.delegate_status:
                 tmp_delegates.append(manager.users.name)
         delegates.append(tmp_delegates)
-    return render_template('venues.html',user_name=session['name'],venues=venues,competition=competition, registrations=registrations, delegates=delegates,admin=is_admin())
+    return render_template('venues.html',user_name=session['name'],venues=venues,competition=competition, registrations=registrations, delegates=delegates,admin=is_organiser(comp))
 
 @app.route('/competitions/<comp>/venues/<int:venue_id>/manager',methods=['GET','POST'])
 def comp_manager_view(comp,venue_id):

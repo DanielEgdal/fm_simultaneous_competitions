@@ -4,22 +4,20 @@
     <meta charset="UTF-8">
     <title>FM Simulatenous Competitions</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="shortcut icon" href="{{url_for('static',filename='logo.png')}}">
     <link rel="stylesheet"  type="text/css" href="{{url_for('.static', filename='style.css')}}">
+    <!-- <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<span class=%22cubing-icon event-333fm%22s></span>" -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>FM</text></svg>">
     {% block extrahead %} {% endblock %}
 </head>
 <body>
 
     <nav>
-        <a href="/" class="navbar-logo"><img src="{{url_for('static',filename='logo.png')}}">
+        <a href="/" class="navbar-logo"><span class="cubing-icon event-333fm"></span>
         <ul>
             <li><a href="/competitions">Competition list</a></li>
-          {% if manager %}
-          <li><a href="/manager">Administrator</a></li>
-          {% endif %}
             
           {% if user_name %}
-          <li><a href="/logout">Log ud</a></li>
+          <li><a href="/logout">Sign out</a></li>
           {% endif %}
         </ul>
     </nav>

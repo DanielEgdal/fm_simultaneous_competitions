@@ -2,7 +2,7 @@
 
 {% block content %}
 
-<a href="/competitions/{{competition.id}}"><h1>{{competition.name}}</h1></a>
+<a href="/competitions/{{competition.id}}/venues/{{venue.id}}/manager"><h1>{{competition.name}}</h1></a>
 <p>Admin overview of registrations for <b>{{venue}}</b></p>
 
 <p>Remember you currently have <b>{{am_accepted}}</b> accepted of the limit <b>{{venue.competitor_limit}}</b></p>

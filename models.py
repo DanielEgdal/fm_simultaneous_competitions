@@ -45,10 +45,10 @@ class Venues(db.Model):
 
 class VenueManagers(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    venues = db.relationship('Venues', backref=db.backref('venueManagers', lazy=True))
+    venues = db.relationship('Venues', backref=db.backref('venue_managers', lazy=True))
     venue_id = db.Column(db.Integer, db.ForeignKey('venues.id'), nullable=False)
 
-    users = db.relationship('Users', backref=db.backref('venueManagers', lazy=True))
+    users = db.relationship('Users', backref=db.backref('venue_managers', lazy=True))
     manager_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
 
@@ -62,6 +62,16 @@ class Registrations(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     status = db.Column(db.String(20),nullable=False)
+
+class CompetitionOrganizers(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    # users = db.relationship('Users', backref=db.backref('CompetitionOrganizers', lazy=True))
+    # user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, nullable=False) # Intentionally not setting foreign key
+
+    competitions = db.relationship('Competitions', backref=db.backref('competition_organizers', lazy=True))
+    competition_id = db.Column(db.Integer, db.ForeignKey('competitions.id'), nullable=False)
 
 def init_db(app):
     db.init_app(app)
