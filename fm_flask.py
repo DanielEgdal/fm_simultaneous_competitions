@@ -405,6 +405,9 @@ def register(comp):
                 status = 'accepted'
             else:
                 status = 'pending'
+        else:
+            status = 'pending'
+
         if not registration:
             reg = Registrations(venue_id=venue_id,user_id=session['id'],created_at=timestamp,status=status)
             db.session.add(reg)
