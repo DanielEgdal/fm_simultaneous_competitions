@@ -1,5 +1,16 @@
 {% extends 'base.html' %}
 
+{% block extrahead %}
+<script>
+  function confirmSubmission(event) {
+      var confirmation = confirm("You are about to change the venue of your registration. Pressing `ok` remove your registration from the old venue. Do you want to proceed?");
+      if (!confirmation) {
+          event.preventDefault();
+      }
+  }
+</script>
+{% endblock %}
+
 {% block content %}
 
 <a href="/competitions/{{competition.id}}"><h1>{{competition.name}}</h1></a>
@@ -11,6 +22,7 @@
 
   </p>
 <p>Submitting the form below will change your registration.</p>
+<hr>
 {% endif %}
 
 <p>Registration opens <b>{{competition.registration_open}}</b> UTC. Registration closes <b>{{competition.registration_close}}</b> UTC.</p>
@@ -21,7 +33,7 @@
 
   <p>Choose your venue below</p>
 
-  <form method="post" action="/competitions/{{competition.id}}/register">
+  <form method="post" action="/competitions/{{competition.id}}/register" {{'onsubmit=confirmSubmission(event)' if registration.status != 'deleted'}}>
       <select name="venues">
         <option value=""></option>
         {% for venue in venues %}

@@ -374,6 +374,7 @@ def edit_venue(comp,venue_id):
         db.session.commit()
         return redirect(url_for('comp_manager_view',comp=comp,venue_id=venue_id))
 
+# TODO add button for delete
 @app.route('/competitions/<comp>/register', methods=['GET','POST'])
 @logged_in_required
 def register(comp):
@@ -387,6 +388,7 @@ def register(comp):
     closes_in = round((competition.registration_close - timestamp).total_seconds())
     venues = Venues.query.filter_by(competition_id=comp).all()
     if request.method == 'GET':
+        print(registration)
         return render_template('register.html',user_name=session['name'],competition=competition,venues=venues,opens_in=opens_in,closes_in=closes_in,registration=registration)
     elif request.method == 'POST':
 
@@ -400,7 +402,7 @@ def register(comp):
             return render_template('error_page.html',error_str='You did something weird in the form. The venue ID did not match the competition you are at.')
         if venue.accept_registrations_automatically:
             limit = venue.competitor_limit
-            reg_count = len(Registrations.query.filter_by(venue_id=venue_id).all())
+            reg_count = len(Registrations.query.filter_by(venue_id=venue_id).all()) # TODO do not count deleted
             if reg_count < limit:
                 status = 'accepted'
             else:
