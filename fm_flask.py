@@ -377,6 +377,8 @@ def comp_manager_view(comp,venue_id):
 
 @app.route('/competitions/<comp>/venues/<int:venue_id>/manager/delete/<int:manager_id>',methods=['POST'])
 def delete_manager(comp,venue_id,manager_id):
+    if not is_manager(venue_id):
+        return render_template('error_page.html',error_str='You are not a manager of this venue.')
     managers = VenueManagers.query.filter_by(venue_id=venue_id).all()
     am_delegates = len([manager for manager in managers if is_non_trainee_delegate(manager.users)])
     user_to_remove = VenueManagers.query.filter_by(manager_id=manager_id,venue_id=venue_id)
