@@ -4,6 +4,18 @@
 
 <a href="/competitions/{{competition.id}}"><h1>{{competition.name}}</h1></a>
 
+{% if not competition.accepts_new_venues_automatically %}
+<p>
+  The organisers of this competition does <b>not</b> have auto acceptance on for this competition.
+  Before submitting a venue, please reach out to them so they are aware.
+</p>
+{% else %}
+<p>
+  Before submitting a venue, please ensure that your region falls within the scope of this competition.
+  Consider checking the WCA website if certain conditions need to be met for submitting a venue.
+</p>
+{% endif %}
+
 <p>Submit your venue information below</p>
 
 <form method="post" action="/competitions/{{competition.id}}/venues/new">

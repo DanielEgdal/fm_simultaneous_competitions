@@ -28,10 +28,18 @@
     </form>
     {% endif %}
 
-    {% if (delegate and not manager_venue) or admin %}
+    {% if (delegate and delegate != 'trainee_delegate' and not manager_venue) or admin %}
     <p>As you are a Delegate, you can go to the page below to submit a new venue.</p>
     <form action="/competitions/{{competition.id}}/venues/new">
         <input type="submit" value="Go to create venue" />
     </form>
     {% endif %}
+
+    <br>
+    {% if admin %}
+    <form action="/competitions/{{competition.id}}/admin">
+        <button type="submit">Go to the admin view of the competition</button>
+    </form>
+    {% endif %}
+    
 {% endblock %}

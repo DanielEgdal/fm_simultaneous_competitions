@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<a href="/competitions/{{competition.id}}"><h1>{{competition.name}}</h1></a>
+<p>You are currently at the organiser view of the competition.</p>
+
+<p>Change the status of auto acceptance of new venues:</p>
+<form action="/competitions/{{competition.id}}/admin" method="POST">
+    <button type="submit">{{"Require organiser acceptance of new venues" if competition.accepts_new_venues_automatically else "Automatically accept new venues"}}</button>
+</form>
+
+
+<p>Reimport the competition from the WCA (will just update certain values. It will not change the venues):</p>
+<form action="/competitions/{{competition.id}}/admin/import">
+    <button type="submit">Reimport</button>
+</form>
+    <p></p>
+<p>Below are all the venues. You can toggle their visibility.</p>
+
+    <h2>Venues:</h2>
+    <table>
+        <tr>
+          <th>Venue</th>
+        </tr>
+        {% for venue in venues %}
+        <tr>
+          <td><a href="/competitions/{{competition.id}}/venues/{{venue.id}}/manager">{{ venue }}</a></td>
+          <td>
+            <form method="post" action="/competitions/{{competition.id}}/venues/{{venue.id}}/toggle_visability">
+                <button type="submit">{{"Hide venue" if venue.is_visible else "Make venue public"}}</button>
+          </form>
+          </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+{% endblock %}

@@ -11,6 +11,7 @@ class Competitions(db.Model):
     start_date = db.Column(db.Date())
     registration_open = db.Column(db.DateTime())
     registration_close = db.Column(db.DateTime())
+    accepts_new_venues_automatically = db.Column(db.Boolean())
 
     def __repr__(self):
         return self.name
@@ -36,6 +37,7 @@ class Venues(db.Model):
     accept_registrations_automatically = db.Column(db.Boolean)
     timezone = db.Column(db.String(10))
     registration_fee_text = db.Column(db.String(1000))
+    is_visible = db.Column(db.Boolean())
 
     competitions = db.relationship('Competitions', backref=db.backref('venues', lazy=True))
     competition_id = db.Column(db.Integer, db.ForeignKey('competitions.id'), nullable=False)

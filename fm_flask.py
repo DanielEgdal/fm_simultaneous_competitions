@@ -25,14 +25,13 @@ init_db(app)
 
 # TODO admin button to check if every user account got a wcaid before import
 # TODO export registrations to wca
-# TODO favico
+# TODO some check that if venue limit is increased, or a reg is deleted, such that the waiting list is handled.
 
 with app.app_context():
     db.create_all()
     if not Admins.query.all():
         db.session.add(Admins(id=6777))
         db.session.commit()
-
 
 def is_admin():
     if session['id'] in set([admin.id for admin in Admins.query.all()]):
@@ -48,7 +47,6 @@ def is_manager(venue_id):
     is_manager_bool = venue_query.filter_by(manager_id=session['id']).first()
     is_organiser_bool = is_organiser(venue_query.first().venues.competitions.id)
     return is_manager_bool or is_organiser_bool or is_admin()
-
 
 def get_manager_for_venue(compid):
     manager_for_any_venue = VenueManagers.query.filter_by(manager_id=session['id'])\
@@ -176,6 +174,34 @@ def get_organisers_wcif(wcif):
                 organisers.append({'id':person['wcaUserId']})
     return organisers
 
+@app.route("/competitions/<comp>/admin",methods=['GET','POST'])
+def manage_competition(comp):
+    if not is_organiser(comp):
+        return render_template('error_page.html',error_str='You are not an organiser of the competition, or the competition has not been imported yet (contact admin).')
+    
+    venues = Venues.query.filter_by(competition_id=comp).all()
+    competition = Competitions.query.filter_by(id=comp).first()
+
+    if request.method == 'GET':
+        return render_template('admin_venue_overview.html',user_name=session['name'],competition = competition, venues=venues)
+
+    if request.method == 'POST':
+        # This toogles the auto accept of venues
+        competition = Competitions.query.filter_by(id=comp).first()
+        competition.accepts_new_venues_automatically ^= 1 # Flip the booleean
+        db.session.commit()
+        return redirect(url_for('manage_competition',comp=comp))
+
+
+@app.route("/competitions/<comp>/venues/<venue_id>/toggle_visability",methods=['POST'])
+def toogle_venue_visibility(comp,venue_id):
+    if not is_organiser(comp):
+        return render_template('error_page.html',error_str='You are not an organiser of the competition, or the competition has not been imported yet (contact admin).')
+    venue = Venues.query.filter_by(id=venue_id).first()
+    venue.is_visible ^= 1 # Flip the boolean
+    db.session.commit()
+    return redirect(url_for('manage_competition',comp=comp))
+
 @app.route("/competitions/<comp>/admin/import")
 def import_comp(comp):
     escapedCompid = escape(comp)
@@ -183,7 +209,7 @@ def import_comp(comp):
         return render_template('error_page.html',error_str='Invalid compid format.')
 
     if not is_organiser(escapedCompid):
-        return render_template('error_page.html',error_str='You are not an organiser of the competition.')
+        return render_template('error_page.html',error_str='You are not an organiser of the competition, or the competition has not been imported yet (contact admin).')
 
     existing_comp = Competitions.query.filter_by(id=escapedCompid).first()
 
@@ -204,7 +230,9 @@ def import_comp(comp):
     id = comp['id']
     
     if not existing_comp:
-        db.session.add(Competitions(id=id,name=name,registration_open=reg_open,registration_close=reg_close,start_date=start_date))
+        db.session.add(Competitions(id=id,
+                        name=name,registration_open=reg_open,registration_close=reg_close,
+                        start_date=start_date,accepts_new_venues_automatically=True))
         for organiser in organisers:
             orga_id = organiser['id']
             db.session.add(CompetitionOrganizers(user_id=orga_id,competition_id=id))
@@ -218,7 +246,7 @@ def import_comp(comp):
                 continue
             db.session.add(CompetitionOrganizers(user_id=orga_id,competition_id=id))
     db.session.commit()
-    return redirect(url_for('competition_view',comp=id))
+    return redirect(url_for('manage_competition',comp=id))
 
 
 
@@ -231,7 +259,7 @@ def competitions():
 def competition_view(comp):
     competition = Competitions.query.filter_by(id=comp).first()
     if competition:
-        venue_count = len(Venues.query.filter_by(competition_id=comp).all())
+        venue_count = len(Venues.query.filter_by(competition_id=comp,is_visible=True).all())
         manager_venue = get_manager_for_venue(comp)
         registration = None
         if session['id']:
@@ -246,38 +274,38 @@ def competition_view(comp):
 @delegate_required
 def competition_new(comp):
     competition = Competitions.query.filter_by(id=comp).first()
-    if competition:
-        if request.method == 'GET':
-            return render_template('new_venue.html',user_name=session['name'],competition=competition)
-        elif request.method == 'POST':
-            curdate = datetime.datetime.utcnow().date()
-            days_until = (competition.start_date-curdate).days -1
-            if days_until >= 14:
-                form_data = request.form
-                country = escape(form_data["country"])
-                city = escape(form_data["city"])
-                address = escape(form_data["address"])
-                limit = int(escape(form_data["limit"]))
-                timezone = escape(form_data['timezone'])
-                reg_fee_txt = escape(form_data['reg_fee'])
-                auto_accept = True if request.form.getlist("auto_accept") else False
-                new_venue_id = len(Venues.query.all())+1
-                venue = Venues(id=new_venue_id,competition_id=comp,country=country,city=city,
-                    address=address,competitor_limit=limit,
-                    accept_registrations_automatically=auto_accept,
-                    timezone=timezone, registration_fee_text=reg_fee_txt)
-                db.session.add(venue)
+    if not competition:
+        return render_template('error_page.html',error_str='This competition does not appear in the database of this website.')
+    
+    if request.method == 'GET':
+        return render_template('new_venue.html',user_name=session['name'],competition=competition)
+    elif request.method == 'POST':
+        curdate = datetime.datetime.utcnow().date()
+        days_until = (competition.start_date-curdate).days -1
+        if days_until >= 14:
+            form_data = request.form
+            country = escape(form_data["country"])
+            city = escape(form_data["city"])
+            address = escape(form_data["address"])
+            limit = int(escape(form_data["limit"]))
+            timezone = escape(form_data['timezone'])
+            reg_fee_txt = escape(form_data['reg_fee'])
+            auto_accept = True if request.form.getlist("auto_accept") else False
+            new_venue_id = len(Venues.query.all())+1
+            venue = Venues(id=new_venue_id,competition_id=comp,country=country,city=city,
+                address=address,competitor_limit=limit,
+                accept_registrations_automatically=auto_accept,
+                timezone=timezone, registration_fee_text=reg_fee_txt, is_visible=competition.accepts_new_venues_automatically)
+            db.session.add(venue)
 
-                manager = VenueManagers(manager_id=session['id'],venue_id=new_venue_id)
-                db.session.add(manager)
+            manager = VenueManagers(manager_id=session['id'],venue_id=new_venue_id)
+            db.session.add(manager)
 
-                db.session.commit()
+            db.session.commit()
 
-                return redirect(url_for('comp_manager_view',comp=comp,venue_id=new_venue_id))
-            else:
-                return render_template('error_page.html',error_str='You are past the deadline for submitting a new venue for this competition.')
-    else:
-        return "Invalid competition ID"
+            return redirect(url_for('comp_manager_view',comp=comp,venue_id=new_venue_id))
+        else:
+            return render_template('error_page.html',error_str='You are past the deadline for submitting a new venue for this competition.')
 
 @app.route('/competitions/<comp>/venues/<int:venue_id>/registrations')
 def venue_registration_overview(comp,venue_id):
@@ -303,10 +331,11 @@ def edit_registration_status(comp,venue_id,rid):
 
 @app.route('/competitions/<comp>/venues')
 def comp_venues(comp):
+    # TODO allow for multi lines in the payment box
     competition = Competitions.query.filter_by(id=comp).first()
 
-    venues = Venues.query.filter_by(competition_id=comp).order_by(Venues.country).all()
-    registrations = [Registrations.query.filter_by(venue_id=venue.id,status='accepted') for venue in venues]
+    venues = Venues.query.filter_by(competition_id=comp,is_visible=True).order_by(Venues.country).all()
+    registrations = [Registrations.query.filter_by(venue_id=venue.id,status='accepted').order_by(Registrations.created_at) for venue in venues]
     delegates = []
 
     for venue in venues:
@@ -374,7 +403,7 @@ def edit_venue(comp,venue_id):
         db.session.commit()
         return redirect(url_for('comp_manager_view',comp=comp,venue_id=venue_id))
 
-# TODO add button for delete
+# TODO add button for delete own registration
 @app.route('/competitions/<comp>/register', methods=['GET','POST'])
 @logged_in_required
 def register(comp):
@@ -386,7 +415,7 @@ def register(comp):
     registration = get_comp_registration(comp)
     opens_in = round((competition.registration_open - timestamp).total_seconds())
     closes_in = round((competition.registration_close - timestamp).total_seconds())
-    venues = Venues.query.filter_by(competition_id=comp).all()
+    venues = Venues.query.filter_by(competition_id=comp,is_visible=True).all()
     if request.method == 'GET':
         print(registration)
         return render_template('register.html',user_name=session['name'],competition=competition,venues=venues,opens_in=opens_in,closes_in=closes_in,registration=registration)
@@ -402,7 +431,7 @@ def register(comp):
             return render_template('error_page.html',error_str='You did something weird in the form. The venue ID did not match the competition you are at.')
         if venue.accept_registrations_automatically:
             limit = venue.competitor_limit
-            reg_count = len(Registrations.query.filter_by(venue_id=venue_id).all()) # TODO do not count deleted
+            reg_count = len(Registrations.query.filter_by(venue_id=venue_id).filter(Registrations.status!="deleted").all())
             if reg_count < limit:
                 status = 'accepted'
             else:
