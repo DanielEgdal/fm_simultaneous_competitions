@@ -43,9 +43,13 @@ def is_organiser(competition_id):
     return (session['id'] in CompetitionOrganizers.query.filter_by(competition_id=competition_id)) or is_admin()
     
 def is_manager(venue_id):
-    venue_query = VenueManagers.query.filter_by(venue_id=venue_id)
-    is_manager_bool = venue_query.filter_by(manager_id=session['id']).first()
-    is_organiser_bool = is_organiser(venue_query.first().venues.competitions.id)
+    venue_manager_query = VenueManagers.query.filter_by(venue_id=venue_id)
+    if venue_manager_query.first():
+        is_manager_bool = venue_manager_query.filter_by(manager_id=session['id']).first()
+    else:
+        is_manager_bool = False
+    is_organiser_bool = is_organiser(Venues.query.filter_by(id=venue_id).first().competitions.id)
+
     return is_manager_bool or is_organiser_bool or is_admin()
 
 def get_manager_for_venue(compid):
