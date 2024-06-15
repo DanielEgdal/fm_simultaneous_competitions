@@ -242,3 +242,18 @@ select {
 option {
   font-size: 20px;
 }
+
+div.basic_box {
+  border-width:2px;
+  border-style:solid;
+  border-color:white;
+}
+
+textarea {
+  width: 100%;  
+  min-height: 100px;
+  resize: vertical;
+  box-sizing: border-box;
+  overflow-wrap: break-word;
+  margin-bottom: 10px;
+}

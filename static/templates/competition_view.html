@@ -14,7 +14,7 @@
         <input type="submit" value="Go to the register page" />
     </form>
 
-    {% if registration %}
+    {% if registration and registration.status != 'deleted' %}
     <p class="medlem_info {{'active_member' if registration.status == 'accepted' else 'inactive_member'}}">You have submitted a registration for the venue  <b class=" {{'active_member' if registration.status == 'accepted' else 'inactive_member'}}">&nbsp;{{registration.venues}}</b>. 
         The status of your registration is <b class="{{'active_member' if registration.status == 'accepted' else 'inactive_member'}}">&nbsp;{{registration.status}}</b></p>
     {% else %}

@@ -24,7 +24,13 @@
     <p>Competitor limit: {{venue.competitor_limit}}</p>
     <p>Address: {{venue.address}}</p>
     <p>Timezone: UTC{{venue.timezone}}</p>
-    <p>Registration fee and details: {{venue.registration_fee_text}}</p>
+    <div class="basic_box">
+    <p>Registration fee and details: 
+        {% for text in venue.registration_fee_text.split('\\n') %}
+            <p>{{text}}</p>
+        {% endfor %}
+    </p>
+    </div>
     <p>Registrations for this venue {{"requires manual acceptance by the delegate." if not venue.accept_registrations_automatically else "are accepted automatically if there is space for it."}}</p>
     <table class="centered">
         <tr>

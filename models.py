@@ -20,9 +20,9 @@ class Users(db.Model):
     id = db.Column(db.Integer,primary_key=True)
     name = db.Column(db.String(100))
     wca_id = db.Column(db.String(10),unique=True, nullable=True)
-    email = db.Column(db.String(100),nullable=False)
+    email = db.Column(db.String(100),nullable=True) # Should ideally be nullable False
     delegate_status = db.Column(db.String(30),nullable=True)
-    dob = db.Column(db.Date(),nullable=False)
+    dob = db.Column(db.Date(),nullable=True) # Should ideally be nullable False
     gender = db.Column(db.CHAR())
 
     def __repr__(self):

@@ -3,7 +3,7 @@
 {% block extrahead %}
 <script>
   function confirmSubmission(event) {
-      var confirmation = confirm("You are about to change the venue of your registration. Pressing `ok` remove your registration from the old venue. Do you want to proceed?");
+      var confirmation = confirm("You are about to change your registration. Pressing `ok` remove your registration from the old venue. Do you want to proceed?");
       if (!confirmation) {
           event.preventDefault();
       }
@@ -29,11 +29,11 @@
 
 {% if opens_in <= 0 and closes_in >= 0%}
 
-<p>Registration closes in {{ closes_in }} seconds.</p>
+<p>Registration closes in {{closes_in_formatted}}.</p>
 
   <p>Choose your venue below</p>
 
-  <form method="post" action="/competitions/{{competition.id}}/register" {{'onsubmit=confirmSubmission(event)' if registration.status != 'deleted'}}>
+  <form method="post" action="/competitions/{{competition.id}}/register" {{'onsubmit=confirmSubmission(event)' if registration and registration.status != 'deleted'}}>
       <select name="venues">
         <option value=""></option>
         {% for venue in venues %}
@@ -46,12 +46,19 @@
 
 {% elif opens_in > 0 %}
 
-<p>Registration opens in {{opens_in}} seconds.</p>
+<p>Registration opens in {{closes_in_formatted}}.</p>
 
 {% else %}
 
 <p>Registtration has already closed.</p>
 
+{% endif %}
+
+<hr>
+{% if registration %}
+<form method="post" action="/competitions/{{competition.id}}/register/delete" {{'onsubmit=confirmSubmission(event)' if registration.status != 'deleted'}}>
+  <button type="submit">Cancel my registration</button>
+</form>
 {% endif %}
 
 {% endblock %}

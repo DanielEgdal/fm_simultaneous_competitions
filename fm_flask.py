@@ -168,7 +168,7 @@ def process_token():
         session['name'] = user_name
         session['id'] = user_id
         session['delegate'] = True if delegate_status and delegate_status != 'trainee_delegate' else False
-    return "Du bliver omstillet til din konto."
+    return "You are being redirected."
 
 def get_organisers_wcif(wcif):
     organisers = []
@@ -207,6 +207,7 @@ def toogle_venue_visibility(comp,venue_id):
     return redirect(url_for('manage_competition',comp=comp))
 
 @app.route("/competitions/<comp>/admin/import")
+@logged_in_required
 def import_comp(comp):
     escapedCompid = escape(comp)
     if not re.match('^[a-zA-Z\d]{5,32}$',escapedCompid):
@@ -251,7 +252,6 @@ def import_comp(comp):
             db.session.add(CompetitionOrganizers(user_id=orga_id,competition_id=id))
     db.session.commit()
     return redirect(url_for('manage_competition',comp=id))
-
 
 
 @app.route('/competitions')
@@ -319,6 +319,7 @@ def venue_registration_overview(comp,venue_id):
     return render_template("venue_registration_overview.html",registrations=registrations,competition=venue.competitions, venue=venue,am_accepted=am_accepted,user_name=session['name'])
 
 @app.route('/competitions/<comp>/venues/<int:venue_id>/registrations/<int:rid>',methods=['POST'])
+@logged_in_required
 def edit_registration_status(comp,venue_id,rid):
     if not is_manager(venue_id):
         return render_template('error_page.html',error_str='You are not a manager of this venue.')
@@ -335,7 +336,6 @@ def edit_registration_status(comp,venue_id,rid):
 
 @app.route('/competitions/<comp>/venues')
 def comp_venues(comp):
-    # TODO allow for multi lines in the payment box
     competition = Competitions.query.filter_by(id=comp).first()
 
     venues = Venues.query.filter_by(competition_id=comp,is_visible=True).order_by(Venues.country).all()
@@ -351,6 +351,7 @@ def comp_venues(comp):
     return render_template('venues.html',user_name=session['name'],venues=venues,competition=competition, registrations=registrations, delegates=delegates,admin=is_organiser(comp))
 
 @app.route('/competitions/<comp>/venues/<int:venue_id>/manager',methods=['GET','POST'])
+@logged_in_required
 def comp_manager_view(comp,venue_id):
     if not is_manager(venue_id):
         return render_template('error_page.html',error_str='You are not a manager of this venue.')
@@ -366,16 +367,37 @@ def comp_manager_view(comp,venue_id):
             return render_template('error_page.html',error_str='You supplied a WCAID of wrong format.')
         
         user = Users.query.filter_by(wca_id=wcaid).first()
-        if user:
-            manager = VenueManagers(
-                manager_id = user.id,
-                venue_id = venue_id
-            )
-            db.session.add(manager)
-            db.session.commit()
+        if not user:
+            success, user = get_user_data_wca(wcaid)
+            if not success:
+                return render_template('error_page.html',error_str='This WCA ID does not exist or the WCA website is bad.')
+            db.session.add(user)
+
+        manager = VenueManagers(
+            manager_id = user.id,
+            venue_id = venue_id
+        )
+        db.session.add(manager)
+        db.session.commit()
+
         return redirect(url_for('comp_manager_view',comp=comp,venue_id=venue_id))
 
+def get_user_data_wca(wcaid):
+    response = requests.get(f'https://api.worldcubeassociation.org/users/{wcaid}')
+    if (not response.status_code == 200):
+        return False, None
+    content_json = json.loads(response.content)
+    if 'user' not in content_json:
+        return False, None
+    content = content_json['user']
+    email = content['email'] if 'email' in content else None
+    user = Users(id=content['id'],name=content['name'],dob=None,gender=content['gender'],
+          wca_id=content['wca_id'],delegate_status=content['delegate_status'], email=email)
+    return True,user
+
+
 @app.route('/competitions/<comp>/venues/<int:venue_id>/manager/delete/<int:manager_id>',methods=['POST'])
+@logged_in_required
 def delete_manager(comp,venue_id,manager_id):
     if not is_manager(venue_id):
         return render_template('error_page.html',error_str='You are not a manager of this venue.')
@@ -390,6 +412,7 @@ def delete_manager(comp,venue_id,manager_id):
     return redirect(url_for('comp_manager_view',comp=comp,venue_id=venue_id))
 
 @app.route('/competitions/<comp>/venues/<int:venue_id>/edit',methods=['GET','POST'])
+@logged_in_required
 def edit_venue(comp,venue_id):
     if not is_manager(venue_id):
         return render_template('error_page.html',error_str='You are not a manager of this venue.')
@@ -409,7 +432,16 @@ def edit_venue(comp,venue_id):
         db.session.commit()
         return redirect(url_for('comp_manager_view',comp=comp,venue_id=venue_id))
 
-# TODO add button for delete own registration
+def format_seconds(seconds):
+    days = seconds // 86400
+    seconds %= 86400
+    hours = seconds // 3600
+    seconds %= 3600
+    minutes = seconds // 60
+    seconds %= 60
+    seconds = int(seconds)
+    return f"{days} days, {hours} hours, {minutes} minutes, {seconds} seconds"
+
 @app.route('/competitions/<comp>/register', methods=['GET','POST'])
 @logged_in_required
 def register(comp):
@@ -422,9 +454,13 @@ def register(comp):
     opens_in = round((competition.registration_open - timestamp).total_seconds())
     closes_in = round((competition.registration_close - timestamp).total_seconds())
     venues = Venues.query.filter_by(competition_id=comp,is_visible=True).all()
+    opens_in_formatted = format_seconds(opens_in)
+    closes_in_formatted = format_seconds(closes_in)
     if request.method == 'GET':
         print(registration)
-        return render_template('register.html',user_name=session['name'],competition=competition,venues=venues,opens_in=opens_in,closes_in=closes_in,registration=registration)
+        return render_template('register.html',user_name=session['name'],competition=competition,
+                               venues=venues,opens_in=opens_in,closes_in=closes_in,registration=registration,
+                               opens_in_formatted=opens_in_formatted, closes_in_formatted=closes_in_formatted)
     elif request.method == 'POST':
 
         if not(opens_in <= 0 and closes_in >= 0):
@@ -457,6 +493,14 @@ def register(comp):
         flash(f'You have submitted your registration. The current status is {status}')
         return redirect(url_for('comp_venues',comp=comp))
 
+@app.route('/competitions/<comp>/register/delete', methods=['POST'])
+@logged_in_required
+def delete_own_registration(comp):
+    registration = get_comp_registration(comp)
+    registration.status = 'deleted'
+    db.session.commit()
+    flash(f'You have now deleted your own registration.')
+    return redirect(url_for('comp_venues',comp=comp))
 
 if __name__ == '__main__':
     app.run(port=5000,debug=True)
