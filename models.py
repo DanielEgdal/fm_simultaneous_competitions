@@ -40,7 +40,7 @@ class Venues(db.Model):
     is_visible = db.Column(db.Boolean())
 
     competitions = db.relationship('Competitions', backref=db.backref('venues', lazy=True))
-    competition_id = db.Column(db.Integer, db.ForeignKey('competitions.id'), nullable=False)
+    competition_id = db.Column(db.String(32), db.ForeignKey('competitions.id'), nullable=False)
 
     def __str__(self):
         return f"{self.city}, {self.country}"
