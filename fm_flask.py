@@ -213,26 +213,28 @@ def import_comp(comp):
     if not re.match('^[a-zA-Z\d]{5,32}$',escapedCompid):
         return render_template('error_page.html',error_str='Invalid compid format.')
 
-    if not is_organiser(escapedCompid):
+    if not is_organiser(comp):
         return render_template('error_page.html',error_str='You are not an organiser of the competition, or the competition has not been imported yet (contact admin).')
 
-    existing_comp = Competitions.query.filter_by(id=escapedCompid).first()
+    existing_comp = Competitions.query.filter_by(id=comp).first()
 
-    comp = json.loads(requests.get(f"https://api.worldcubeassociation.org/competitions/{escapedCompid}").content)
-    if 'error' in comp: # Comp is not yet announced. Use the WCIF
-        comp = json.loads(requests.get(f"https://api.worldcubeassociation.org/competitions/{escapedCompid}/wcif",headers=session['token']).content)
-        reg_open = Timestamp(comp['registrationInfo']['openTime'])
-        reg_close = Timestamp(comp['registrationInfo']['closeTime'])
-        start_date = Timestamp(comp['schedule']['startDate'])
-        organisers = get_organisers_wcif(comp)
+    comp_json = json.loads(requests.get(f"https://api.worldcubeassociation.org/competitions/{comp}").content)
+    if 'error' in comp_json: # Comp is not yet announced. Use the WCIF
+        comp_json = json.loads(requests.get(f"https://www.worldcubeassociation.org/api/v0/competitions/{comp}/wcif",headers=session['token']).content)
+        if 'error' in comp_json:
+            return render_template('error_page.html',error_str='The WCA website responded with an error when trying to get the WCIF. Potentially not a valid token.')
+        reg_open = Timestamp(comp_json['registrationInfo']['openTime'])
+        reg_close = Timestamp(comp_json['registrationInfo']['closeTime'])
+        start_date = Timestamp(comp_json['schedule']['startDate'])
+        organisers = get_organisers_wcif(comp_json)
     else: # format for these fields is annoyingly different
-        reg_open = Timestamp(comp['registration_open'])
-        reg_close = Timestamp(comp['registration_close'])
-        start_date = Timestamp(comp['start_date'])
-        organisers = comp['organizers']
+        reg_open = Timestamp(comp_json['registration_open'])
+        reg_close = Timestamp(comp_json['registration_close'])
+        start_date = Timestamp(comp_json['start_date'])
+        organisers = comp_json['organizers']
 
-    name = comp['name']
-    id = comp['id']
+    name = comp_json['name']
+    id = comp_json['id']
     
     if not existing_comp:
         db.session.add(Competitions(id=id,
