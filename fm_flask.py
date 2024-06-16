@@ -223,13 +223,13 @@ def import_comp(comp):
         comp_json = json.loads(requests.get(f"https://www.worldcubeassociation.org/api/v0/competitions/{comp}/wcif",headers=session['token']).content)
         if 'error' in comp_json:
             return render_template('error_page.html',error_str='The WCA website responded with an error when trying to get the WCIF. Potentially not a valid token.')
-        reg_open = Timestamp(comp_json['registrationInfo']['openTime'])
-        reg_close = Timestamp(comp_json['registrationInfo']['closeTime'])
+        reg_open = Timestamp(comp_json['registrationInfo']['openTime']).strftime('%Y-%m-%d %H:%M:%S')
+        reg_close = Timestamp(comp_json['registrationInfo']['closeTime']).strftime('%Y-%m-%d %H:%M:%S')
         start_date = Timestamp(comp_json['schedule']['startDate'])
         organisers = get_organisers_wcif(comp_json)
     else: # format for these fields is annoyingly different
-        reg_open = Timestamp(comp_json['registration_open'])
-        reg_close = Timestamp(comp_json['registration_close'])
+        reg_open = Timestamp(comp_json['registration_open']).strftime('%Y-%m-%d %H:%M:%S')
+        reg_close = Timestamp(comp_json['registration_close']).strftime('%Y-%m-%d %H:%M:%S')
         start_date = Timestamp(comp_json['start_date'])
         organisers = comp_json['organizers']
 
