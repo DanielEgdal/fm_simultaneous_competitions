@@ -73,7 +73,7 @@ class CompetitionOrganizers(db.Model):
     user_id = db.Column(db.Integer, nullable=False) # Intentionally not setting foreign key
 
     competitions = db.relationship('Competitions', backref=db.backref('competition_organizers', lazy=True))
-    competition_id = db.Column(db.Integer, db.ForeignKey('competitions.id'), nullable=False)
+    competition_id = db.Column(db.String(32), db.ForeignKey('competitions.id'), nullable=False)
 
 def init_db(app):
     db.init_app(app)
