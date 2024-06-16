@@ -290,12 +290,12 @@ def competition_new(comp):
         days_until = (competition.start_date-curdate).days -1
         if days_until >= 14:
             form_data = request.form
-            country = escape(form_data["country"])
-            city = escape(form_data["city"])
-            address = escape(form_data["address"])
+            country = form_data["country"]
+            city = form_data["city"]
+            address = form_data["address"]
             limit = int(escape(form_data["limit"]))
-            timezone = escape(form_data['timezone'])
-            reg_fee_txt = escape(form_data['reg_fee'])
+            timezone = form_data['timezone']
+            reg_fee_txt = form_data['reg_fee']
             auto_accept = True if request.form.getlist("auto_accept") else False
             new_venue_id = len(Venues.query.all())+1
             venue = Venues(id=new_venue_id,competition_id=comp,country=country,city=city,
@@ -363,9 +363,9 @@ def comp_manager_view(comp,venue_id):
         venue_managers = VenueManagers.query.filter_by(venue_id=venue_id).all()
         return render_template('manager_view.html',competition=competition,venue=venue,venue_managers=venue_managers)
     elif request.method == 'POST':
-        wcaid = escape(request.form.get('wcaid'))
+        wcaid = request.form.get('wcaid')
         pattern = re.compile("^[A-Z\d]+$")
-        if not (pattern.match(wcaid) and len(wcaid) == 10):
+        if not (pattern.match(escape(wcaid)) and len(wcaid) == 10):
             return render_template('error_page.html',error_str='You supplied a WCAID of wrong format.')
         
         user = Users.query.filter_by(wca_id=wcaid).first()
@@ -424,12 +424,12 @@ def edit_venue(comp,venue_id):
         return render_template('edit_venue.html',competition=competition,venue=venue)
     elif request.method == 'POST':
         form_data = request.form
-        venue.country = escape(form_data["country"])
-        venue.city = escape(form_data["city"])
-        venue.address = escape(form_data["address"])
+        venue.country = form_data["country"]
+        venue.city = form_data["city"]
+        venue.address = form_data["address"]
         venue.competitor_limit = int(escape(form_data["limit"]))
-        venue.timezone = escape(form_data['timezone'])
-        venue.registration_fee_text = escape(form_data['reg_fee'])
+        venue.timezone = form_data['timezone']
+        venue.registration_fee_text = form_data['reg_fee']
         venue.accept_registrations_automatically = True if request.form.getlist("auto_accept") else False
         db.session.commit()
         return redirect(url_for('comp_manager_view',comp=comp,venue_id=venue_id))
