@@ -20,7 +20,7 @@
     {% else %}
         <p>{{venue}}</p>
     {% endif %}
-    <p>Delegates: {{",".join(delegates[loop.index0])}}</p>
+    <p>Delegates: {{", ".join(delegates[loop.index0])}}</p>
     <p>Competitor limit: {{venue.competitor_limit}}</p>
     <p>Address: {{venue.address}}</p>
     <p>Timezone: UTC{{venue.timezone}}</p>
