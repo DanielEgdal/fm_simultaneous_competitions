@@ -89,7 +89,7 @@ def logged_in_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not is_logged_in():
-            return render_template("error_page.html",error_str="You need to be logged in to access this page.")
+            return render_template("error_page.html",error_str="You need to be logged in to access this page.", user_name=session['name'])
         return f(*args, **kwargs)
     return decorated_function
 
@@ -126,6 +126,10 @@ def logout():
     for key in keys:
         session.pop(key)
     return redirect(url_for('home'))
+
+@app.route('/login')
+def login():
+    return redirect("https://www.worldcubeassociation.org/oauth/authorize?client_id=BI5F06shcLg2tNPbVJ431p3XLGlqzRcBYsDT6flLg2I&redirect_uri=https%3A%2F%2Ffm.danskspeedcubingforening.dk%2Fshow_token&response_type=token&scope=manage_competitions+public+email+dob")
 
 @app.route('/show_token') 
 def show_token():
@@ -181,7 +185,7 @@ def get_organisers_wcif(wcif):
 @app.route("/competitions/<comp>/admin",methods=['GET','POST'])
 def manage_competition(comp):
     if not is_organiser(comp):
-        return render_template('error_page.html',error_str='You are not an organiser of the competition, or the competition has not been imported yet (contact admin).')
+        return render_template('error_page.html',error_str='You are not an organiser of the competition, or the competition has not been imported yet (contact admin).', user_name=session['name'])
     
     venues = Venues.query.filter_by(competition_id=comp).all()
     competition = Competitions.query.filter_by(id=comp).first()
@@ -200,7 +204,7 @@ def manage_competition(comp):
 @app.route("/competitions/<comp>/venues/<venue_id>/toggle_visability",methods=['POST'])
 def toogle_venue_visibility(comp,venue_id):
     if not is_organiser(comp):
-        return render_template('error_page.html',error_str='You are not an organiser of the competition, or the competition has not been imported yet (contact admin).')
+        return render_template('error_page.html',error_str='You are not an organiser of the competition, or the competition has not been imported yet (contact admin).', user_name=session['name'])
     venue = Venues.query.filter_by(id=venue_id).first()
     venue.is_visible ^= 1 # Flip the boolean
     db.session.commit()
@@ -211,10 +215,10 @@ def toogle_venue_visibility(comp,venue_id):
 def import_comp(comp):
     escapedCompid = escape(comp)
     if not re.match('^[a-zA-Z\d]{5,32}$',escapedCompid):
-        return render_template('error_page.html',error_str='Invalid compid format.')
+        return render_template('error_page.html',error_str='Invalid compid format.', user_name=session['name'])
 
     if not is_organiser(comp):
-        return render_template('error_page.html',error_str='You are not an organiser of the competition, or the competition has not been imported yet (contact admin).')
+        return render_template('error_page.html',error_str='You are not an organiser of the competition, or the competition has not been imported yet (contact admin).', user_name=session['name'])
 
     existing_comp = Competitions.query.filter_by(id=comp).first()
 
@@ -222,7 +226,7 @@ def import_comp(comp):
     if 'error' in comp_json: # Comp is not yet announced. Use the WCIF
         comp_json = json.loads(requests.get(f"https://www.worldcubeassociation.org/api/v0/competitions/{comp}/wcif",headers=session['token']).content)
         if 'error' in comp_json:
-            return render_template('error_page.html',error_str='The WCA website responded with an error when trying to get the WCIF. Potentially not a valid token.')
+            return render_template('error_page.html',error_str='The WCA website responded with an error when trying to get the WCIF. Potentially not a valid token.', user_name=session['name'])
         reg_open = Timestamp(comp_json['registrationInfo']['openTime']).strftime('%Y-%m-%d %H:%M:%S')
         reg_close = Timestamp(comp_json['registrationInfo']['closeTime']).strftime('%Y-%m-%d %H:%M:%S')
         start_date = Timestamp(comp_json['schedule']['startDate'])
@@ -281,7 +285,7 @@ def competition_view(comp):
 def competition_new(comp):
     competition = Competitions.query.filter_by(id=comp).first()
     if not competition:
-        return render_template('error_page.html',error_str='This competition does not appear in the database of this website.')
+        return render_template('error_page.html',error_str='This competition does not appear in the database of this website.', user_name=session['name'])
     
     if request.method == 'GET':
         return render_template('new_venue.html',user_name=session['name'],competition=competition)
@@ -311,7 +315,7 @@ def competition_new(comp):
 
             return redirect(url_for('comp_manager_view',comp=comp,venue_id=new_venue_id))
         else:
-            return render_template('error_page.html',error_str='You are past the deadline for submitting a new venue for this competition.')
+            return render_template('error_page.html',error_str='You are past the deadline for submitting a new venue for this competition.', user_name=session['name'])
 
 @app.route('/competitions/<comp>/venues/<int:venue_id>/registrations')
 def venue_registration_overview(comp,venue_id):
@@ -324,14 +328,14 @@ def venue_registration_overview(comp,venue_id):
 @logged_in_required
 def edit_registration_status(comp,venue_id,rid):
     if not is_manager(venue_id):
-        return render_template('error_page.html',error_str='You are not a manager of this venue.')
+        return render_template('error_page.html',error_str='You are not a manager of this venue.', user_name=session['name'])
     registration = Registrations.query.filter_by(id=rid).first()
     new_status = request.form['new_status']
     if new_status == 'accepted':
         registrations = Registrations.query.filter_by(venue_id=venue_id).all()
         am_accepted = len([registration for registration in registrations if registration.status=='accepted'])
         if am_accepted >= Venues.query.filter_by(id=venue_id).first().competitor_limit:
-            return render_template('error_page.html',error_str='You cannot accept more registrations because you are over your limit. Go to increase your limit first.')
+            return render_template('error_page.html',error_str='You cannot accept more registrations because you are over your limit. Go to increase your limit first.', user_name=session['name'])
     registration.status = new_status
     db.session.commit()
     return redirect(url_for('venue_registration_overview',comp=comp,venue_id=venue_id))
@@ -361,18 +365,18 @@ def comp_manager_view(comp,venue_id):
     venue = Venues.query.filter_by(id=venue_id).first()
     if request.method == 'GET':
         venue_managers = VenueManagers.query.filter_by(venue_id=venue_id).all()
-        return render_template('manager_view.html',competition=competition,venue=venue,venue_managers=venue_managers)
+        return render_template('manager_view.html',competition=competition,venue=venue,venue_managers=venue_managers, user_name=session['name'])
     elif request.method == 'POST':
         wcaid = request.form.get('wcaid')
         pattern = re.compile("^[A-Z\d]+$")
         if not (pattern.match(escape(wcaid)) and len(wcaid) == 10):
-            return render_template('error_page.html',error_str='You supplied a WCAID of wrong format.')
+            return render_template('error_page.html',error_str='You supplied a WCAID of wrong format.', user_name=session['name'])
         
         user = Users.query.filter_by(wca_id=wcaid).first()
         if not user:
             success, user = get_user_data_wca(wcaid)
             if not success:
-                return render_template('error_page.html',error_str='This WCA ID does not exist or the WCA website is bad.')
+                return render_template('error_page.html',error_str='This WCA ID does not exist or the WCA website is bad.', user_name=session['name'])
             db.session.add(user)
 
         manager = VenueManagers(
@@ -402,7 +406,7 @@ def get_user_data_wca(wcaid):
 @logged_in_required
 def delete_manager(comp,venue_id,manager_id):
     if not is_manager(venue_id):
-        return render_template('error_page.html',error_str='You are not a manager of this venue.')
+        return render_template('error_page.html',error_str='You are not a manager of this venue.', user_name=session['name'])
     managers = VenueManagers.query.filter_by(venue_id=venue_id).all()
     am_delegates = len([manager for manager in managers if is_non_trainee_delegate(manager.users)])
     user_to_remove = VenueManagers.query.filter_by(manager_id=manager_id,venue_id=venue_id)
@@ -410,18 +414,18 @@ def delete_manager(comp,venue_id,manager_id):
         user_to_remove.delete()
         db.session.commit()
     else:
-        return render_template('error_page.html',error_str='Error: You tried to remove the only delegate for the competition')
+        return render_template('error_page.html',error_str='Error: You tried to remove the only delegate for the competition', user_name=session['name'])
     return redirect(url_for('comp_manager_view',comp=comp,venue_id=venue_id))
 
 @app.route('/competitions/<comp>/venues/<int:venue_id>/edit',methods=['GET','POST'])
 @logged_in_required
 def edit_venue(comp,venue_id):
     if not is_manager(venue_id):
-        return render_template('error_page.html',error_str='You are not a manager of this venue.')
+        return render_template('error_page.html',error_str='You are not a manager of this venue.', user_name=session['name'])
     competition = Competitions.query.filter_by(id=comp).first()
     venue = Venues.query.filter_by(id=venue_id).first()
     if request.method == 'GET':
-        return render_template('edit_venue.html',competition=competition,venue=venue)
+        return render_template('edit_venue.html',competition=competition,venue=venue, user_name=session['name'])
     elif request.method == 'POST':
         form_data = request.form
         venue.country = form_data["country"]
@@ -450,7 +454,7 @@ def register(comp):
     timestamp = datetime.datetime.utcnow()
     competition = Competitions.query.filter_by(id=comp).first()
     if not competition:
-        return render_template('error_page.html',error_str='Invalid competition id')
+        return render_template('error_page.html',error_str='Invalid competition id', user_name=session['name'])
     
     registration = get_comp_registration(comp)
     opens_in = round((competition.registration_open - timestamp).total_seconds())
@@ -466,13 +470,13 @@ def register(comp):
     elif request.method == 'POST':
 
         if not(opens_in <= 0 and closes_in >= 0):
-            return render_template('error_page.html',error_str='Your registration is not valid as registration is not open.')
+            return render_template('error_page.html',error_str='Your registration is not valid as registration is not open.', user_name=session['name'])
         
         form_data = request.form
         venue_id = int(escape(form_data["venues"]))
         venue = Venues.query.filter_by(id=venue_id).first()
         if venue.competition_id != comp:
-            return render_template('error_page.html',error_str='You did something weird in the form. The venue ID did not match the competition you are at.')
+            return render_template('error_page.html',error_str='You did something weird in the form. The venue ID did not match the competition you are at.', user_name=session['name'])
         if venue.accept_registrations_automatically:
             limit = venue.competitor_limit
             reg_count = len(Registrations.query.filter_by(venue_id=venue_id).filter(Registrations.status!="deleted").all())
