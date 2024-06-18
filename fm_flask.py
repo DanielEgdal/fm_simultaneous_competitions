@@ -508,6 +508,10 @@ def delete_own_registration(comp):
     flash(f'You have now deleted your own registration.')
     return redirect(url_for('comp_venues',comp=comp))
 
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html',user_name=session['name'])
+
 if __name__ == '__main__':
     app.run(port=5000,debug=True)
 
