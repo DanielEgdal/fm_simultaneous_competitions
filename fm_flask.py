@@ -23,9 +23,11 @@ app.config.update(
 
 init_db(app)
 
+# TODO call for generating all content for a locations tab on wca.
 # TODO admin button to check if every user account got a wcaid before import
 # TODO export registrations to wca
 # TODO some check that if venue limit is increased, or a reg is deleted, such that the waiting list is handled.
+# TODO add back link to WCA website
 
 with app.app_context():
     db.create_all()
@@ -161,13 +163,17 @@ def process_token():
                 dob=dob
             )
         entry = Users.query.filter_by(id=user_id).first()
-        if entry: # Retuner
-            entry = user # update their info
-            db.session.commit()
+        if entry: # Retuner, update their info
+                entry.name = user_name
+                entry.wca_id = user_wcaid
+                entry.email = user_mail
+                entry.delegate_status = delegate_status
+                entry.gender = gender
+                entry.dob = dob
         else: # This is someone who is new to the website
         
             db.session.add(user)
-            db.session.commit()
+        db.session.commit()
         
         session['name'] = user_name
         session['id'] = user_id
@@ -200,6 +206,20 @@ def manage_competition(comp):
         db.session.commit()
         return redirect(url_for('manage_competition',comp=comp))
 
+@app.route("/competitions/<comp>/admin/export",methods=['GET'])
+def export_registrations(comp):
+    if not is_organiser(comp):
+        return render_template('error_page.html',error_str='You are not an organiser of the competition, or the competition has not been imported yet (contact admin).', user_name=session['name'])
+    
+    registrations = Registrations.query.join(Venues,Registrations.venue_id == Venues.id)\
+            .filter(Venues.competition_id==comp).all()
+    print(registrations)
+    csv = "Status,Name,Country,WCA ID,Birth Date,Gender,333fm,Email"
+    for registrant in registrations:
+        status = registrant.status[0] # Get the first char, per WCA structure
+        line = f"\n{status},{registrant.users.name},,{registrant.users.wca_id},{registrant.users.dob},{registrant.users.gender},1,{registrant.users.email}"
+        csv += line
+    return Response(csv,mimetype="application/csv",headers={'Content-Disposition': f'attachment;filename={comp}_reg_export.csv'})
 
 @app.route("/competitions/<comp>/venues/<venue_id>/toggle_visability",methods=['POST'])
 def toogle_venue_visibility(comp,venue_id):
