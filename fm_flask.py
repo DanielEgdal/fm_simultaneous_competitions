@@ -25,7 +25,6 @@ init_db(app)
 
 # TODO call for generating all content for a locations tab on wca.
 # TODO admin button to check if every user account got a wcaid before import
-# TODO export registrations to wca
 # TODO some check that if venue limit is increased, or a reg is deleted, such that the waiting list is handled.
 # TODO add back link to WCA website
 
@@ -216,11 +215,10 @@ def export_registrations(comp):
     
     registrations = Registrations.query.join(Venues,Registrations.venue_id == Venues.id)\
             .filter(Venues.competition_id==comp).all()
-    print(registrations)
     csv = "Status,Name,Country,WCA ID,Birth Date,Gender,333fm,Email"
     for registrant in registrations:
         status = registrant.status[0] # Get the first char, per WCA structure
-        line = f"\n{status},{registrant.users.name},,{registrant.users.wca_id},{registrant.users.dob},{registrant.users.gender},1,{registrant.users.email}"
+        line = f"\n{status},{registrant.users.name},{registrant.users.country},{registrant.users.wca_id},{registrant.users.dob},{registrant.users.gender},1,{registrant.users.email}"
         csv += line
     return Response(csv,mimetype="application/csv",headers={'Content-Disposition': f'attachment;filename={comp}_reg_export.csv'})
 
@@ -486,7 +484,6 @@ def register(comp):
     opens_in_formatted = format_seconds(opens_in)
     closes_in_formatted = format_seconds(closes_in)
     if request.method == 'GET':
-        print(registration)
         return render_template('register.html',user_name=session['name'],competition=competition,
                                venues=venues,opens_in=opens_in,closes_in=closes_in,registration=registration,
                                opens_in_formatted=opens_in_formatted, closes_in_formatted=closes_in_formatted)

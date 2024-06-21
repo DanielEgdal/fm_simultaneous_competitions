@@ -18,21 +18,26 @@
     <p></p>
 <p>Below are all the venues. You can toggle their visibility.</p>
 
-    <h2>Venues:</h2>
-    <table>
-        <tr>
-          <th>Venue</th>
-        </tr>
-        {% for venue in venues %}
-        <tr>
-          <td><a href="/competitions/{{competition.id}}/venues/{{venue.id}}/manager">{{ venue }}</a></td>
-          <td>
-            <form method="post" action="/competitions/{{competition.id}}/venues/{{venue.id}}/toggle_visability">
-                <button type="submit">{{"Hide venue" if venue.is_visible else "Make venue public"}}</button>
-          </form>
-          </td>
-        </tr>
-        {% endfor %}
-    </table>
+<h2>Venues:</h2>
+<table>
+    <tr>
+        <th>Venue</th>
+    </tr>
+    {% for venue in venues %}
+    <tr>
+        <td><a href="/competitions/{{competition.id}}/venues/{{venue.id}}/manager">{{ venue }}</a></td>
+        <td>
+        <form method="post" action="/competitions/{{competition.id}}/venues/{{venue.id}}/toggle_visability">
+            <button type="submit">{{"Hide venue" if venue.is_visible else "Make venue public"}}</button>
+        </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+
+<form action="/competitions/{{competition.id}}/admin/export">
+    <button type="submit">Get registration export</button>
+</form>
 
 {% endblock %}
