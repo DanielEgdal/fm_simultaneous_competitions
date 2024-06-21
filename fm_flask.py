@@ -152,6 +152,7 @@ def process_token():
         delegate_status = cont['me']['delegate_status']
         gender = cont['me']['gender']
         dob = Timestamp(cont['me']['dob'])
+        country = cont['me']['country']['id']
 
         user = Users(
                 id=user_id,
@@ -160,7 +161,8 @@ def process_token():
                 email=user_mail,
                 delegate_status=delegate_status,
                 gender=gender,
-                dob=dob
+                dob=dob,
+                country = country
             )
         entry = Users.query.filter_by(id=user_id).first()
         if entry: # Retuner, update their info
@@ -170,6 +172,7 @@ def process_token():
                 entry.delegate_status = delegate_status
                 entry.gender = gender
                 entry.dob = dob
+                entry.country = country
         else: # This is someone who is new to the website
         
             db.session.add(user)
@@ -418,7 +421,7 @@ def get_user_data_wca(wcaid):
     content = content_json['user']
     email = content['email'] if 'email' in content else None
     user = Users(id=content['id'],name=content['name'],dob=None,gender=content['gender'],
-          wca_id=content['wca_id'],delegate_status=content['delegate_status'], email=email)
+          wca_id=content['wca_id'],delegate_status=content['delegate_status'], email=email,country=content['country']['id'])
     return True,user
 
 

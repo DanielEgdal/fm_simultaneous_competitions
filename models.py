@@ -24,6 +24,7 @@ class Users(db.Model):
     delegate_status = db.Column(db.String(30),nullable=True)
     dob = db.Column(db.Date(),nullable=True) # Should ideally be nullable False
     gender = db.Column(db.CHAR())
+    country = db.Column(db.String(50))
 
     def __repr__(self):
         return f"{self.name}"
