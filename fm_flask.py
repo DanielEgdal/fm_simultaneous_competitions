@@ -322,7 +322,7 @@ def competition_new(comp):
             timezone = form_data['timezone']
             reg_fee_txt = form_data['reg_fee']
             auto_accept = True if request.form.getlist("auto_accept") else False
-            new_venue_id = len(Venues.query.all())+1
+            new_venue_id = max([venue.id for venue in Venues.query.all()])+1
             venue = Venues(id=new_venue_id,competition_id=comp,country=country,city=city,
                 address=address,competitor_limit=limit,
                 accept_registrations_automatically=auto_accept,
