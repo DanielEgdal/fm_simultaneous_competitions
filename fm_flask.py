@@ -339,7 +339,10 @@ def competition_new(comp):
             return render_template('error_page.html',error_str='You are past the deadline for submitting a new venue for this competition.', user_name=session['name'])
 
 @app.route('/competitions/<comp>/venues/<int:venue_id>/registrations')
+@logged_in_required
 def venue_registration_overview(comp,venue_id):
+    if not is_manager(venue_id):
+        return render_template('error_page.html',error_str='You are not a manager of this venue.', user_name=session['name'])
     venue = Venues.query.filter_by(id=venue_id).first()
     registrations = Registrations.query.filter_by(venue_id=venue_id).all()
     am_accepted = len([registration for registration in registrations if registration.status=='accepted'])
