@@ -3,6 +3,7 @@
 {% block content %}
 
 <a href="/competitions/{{competition.id}}"><h1>{{competition.name}}</h1></a>
+<a href="https://www.worldcubeassociation.org/competitions/{{competition.id}}"><h1>WCA Link</h1></a>
 
 {% with messages = get_flashed_messages() %}
   {% if messages %}
@@ -14,11 +15,11 @@
 
 {% for venue in venues %}
     {% if admin %}
-        <p>
-            <a href="/competitions/{{competition.id}}/venues/{{venue.id}}/manager">{{venue}}</a>
-        </p>
+            <a href="/competitions/{{competition.id}}/venues/{{venue.id}}/manager">
+                <h2>{{venue}}</h2>
+            </a>
     {% else %}
-        <p>{{venue}}</p>
+        <h2>{{venue}}</h2>
     {% endif %}
     <p>Delegates: {{", ".join(delegates[loop.index0])}}</p>
     <p>Competitor limit: {{venue.competitor_limit}}</p>
@@ -44,6 +45,7 @@
             </tr>
         {% endfor %}
     </table>
+    <hr>
     <hr>
 
 {% endfor %}
