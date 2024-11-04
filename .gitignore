@@ -2,3 +2,4 @@ secret.py
 instance/*
 **/__pycache__/*
 *.secret
+*.sql

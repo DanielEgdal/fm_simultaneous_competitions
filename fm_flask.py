@@ -1,5 +1,10 @@
 from flask import session, Flask, render_template,request,redirect,url_for,jsonify,Response,send_file,make_response,send_file, flash
 import requests
+from time import sleep
+from geopy.geocoders import Nominatim
+from timezonefinder import TimezoneFinder
+from geopy.exc import GeocoderUnavailable, GeocoderServiceError
+import pycountry
 import json
 from markupsafe import escape
 from functools import wraps
@@ -214,7 +219,7 @@ def export_registrations(comp):
         return render_template('error_page.html',error_str='You are not an organiser of the competition, or the competition has not been imported yet (contact admin).', user_name=session['name'])
     
     registrations = Registrations.query.join(Venues,Registrations.venue_id == Venues.id)\
-            .filter(Venues.competition_id==comp).all()
+            .filter(Venues.competition_id==comp).filter(Venues.is_visible==True).all()
     csv = "Status,Name,Country,WCA ID,Birth Date,Gender,333fm,Email"
     for registrant in registrations:
         status = registrant.status[0] # Get the first char, per WCA structure
@@ -471,6 +476,66 @@ def format_seconds(seconds):
     seconds %= 60
     seconds = int(seconds)
     return f"{days} days, {hours} hours, {minutes} minutes, {seconds} seconds"
+
+def get_coordinates_for_venues(compid, venues):
+    geolocator = Nominatim(user_agent="fm_venue_application")
+    time_zone_finder = TimezoneFinder() 
+    locations = []
+    timezones = []
+    for venue in venues:
+        print("starting ", venue)
+        while True:
+            try:
+                sleep(0.5)
+                address = f"{venue.address.split('-')[0]}, {venue.city}, {venue.country}"
+                print(f"address: {address}")
+                location = geolocator.geocode(address,timeout=5)
+                # print(venue,location)
+                if not location:
+                    print("didnt find location")
+                    address = f"{venue.city}, {venue.country}"
+                    location = geolocator.geocode(address)
+                if location:
+                    locations.append((location.latitude, location.longitude))
+                    timezone = time_zone_finder.timezone_at(lat=location.latitude, lng=location.longitude)
+                    timezones.append(timezone)
+                    print(f"Finished {venue}, {len(locations)}")
+                    break
+            except (requests.exceptions.ConnectionError,GeocoderUnavailable,GeocoderServiceError) as e:
+                print(f"hitting the except, {e}")
+                geolocator = Nominatim(user_agent="fm_venue_application")
+                continue
+    return locations, timezones
+
+@app.route('/competitions/<compid>/admin/schedule_update')
+@admin_required
+def update_schedule_wca(compid):
+    venues = Venues.query.filter_by(competition_id=compid).filter_by(is_visible=True).all()
+    locations,timezones = get_coordinates_for_venues(compid=compid,venues=venues)
+    # print(len(venues),len(locations),len(timezones))
+    wcif = comp_json = json.loads(requests.get(f"https://www.worldcubeassociation.org/api/v0/competitions/{compid}/wcif",headers=session['token']).content)
+    schedule = wcif['schedule']
+
+    current_venues = set([extension['data']['venue_id'] for schedule_venue in schedule['venues'] for extension in schedule_venue['extensions']])
+    for idx,venue in enumerate(venues):
+        name = f"{venue.city}, {venue.country}"
+        if venue.id in current_venues: # TODO something for updating exisiting venues
+            continue
+        new_venue = {"id":len(schedule['venues'])+1,
+                     "name": name, 
+                     "latitudeMicrodegrees": int(locations[idx][0]*1_000_000),
+                     "longitudeMicrodegrees": int(locations[idx][1]*1_000_000),
+                     "countryIso2": pycountry.countries.search_fuzzy(venue.country)[0].alpha_2,
+                     "timezone":timezones[idx],
+                     "rooms":[],
+                     "extensions":[
+                         {"id":"FM_simul_comps", "specUrl": "https://fm.danskspeedcubingforening.dk/", "data":{"venue_id":venue.id}}
+                     ]}
+        schedule['venues'].append(new_venue)
+    wcif['schedule'] = schedule
+    r = requests.patch(f"https://www.worldcubeassociation.org/api/v0/competitions/{compid}/wcif", json=wcif,headers=session['token'])
+    print("This was the request: ",r,r.content)
+    return wcif
 
 @app.route('/competitions/<comp>/register', methods=['GET','POST'])
 @logged_in_required
