@@ -46,7 +46,7 @@ def is_admin():
         return False
     
 def is_organiser(competition_id):
-    return (session['id'] in CompetitionOrganizers.query.filter_by(competition_id=competition_id)) or is_admin()
+    return (session['id'] in CompetitionOrganizers.query.filter_by(competition_id=competition_id).all()) or is_admin()
     
 def is_manager(venue_id):
     venue_manager_query = VenueManagers.query.filter_by(venue_id=venue_id)
@@ -223,7 +223,7 @@ def export_registrations(comp):
     csv = "Status,Name,Country,WCA ID,Birth Date,Gender,333fm,Email"
     for registrant in registrations:
         status = registrant.status[0] # Get the first char, per WCA structure
-        line = f"\n{status},{registrant.users.name},{registrant.users.country},{registrant.users.wca_id},{registrant.users.dob},{registrant.users.gender},1,{registrant.users.email}"
+        line = f"\n{status},{registrant.users.name},{registrant.users.country},{registrant.users.wca_id if registrant.users.wca_id else ''},{registrant.users.dob},{registrant.users.gender},1,{registrant.users.email}"
         csv += line
     return Response(csv,mimetype="application/csv",headers={'Content-Disposition': f'attachment;filename={comp}_reg_export.csv'})
 
