@@ -46,7 +46,9 @@ def is_admin():
         return False
     
 def is_organiser(competition_id):
-    return (session['id'] in CompetitionOrganizers.query.filter_by(competition_id=competition_id).all()) or is_admin()
+    organizer_tuples = CompetitionOrganizers.query.filter_by(competition_id=competition_id).with_entities(CompetitionOrganizers.user_id).all()
+    organizers = set([orga[0] for orga in organizer_tuples])
+    return (session['id'] in organizers) or is_admin()
     
 def is_manager(venue_id):
     venue_manager_query = VenueManagers.query.filter_by(venue_id=venue_id)
