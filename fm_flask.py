@@ -197,6 +197,12 @@ def get_organisers_wcif(wcif):
                 organisers.append({'id':person['wcaUserId']})
     return organisers
 
+@app.route('/competitions')
+def competitions():
+    one_day_ago = datetime.datetime.today() - datetime.timedelta(days=1)
+    comps = Competitions.query.filter(Competitions.start_date>one_day_ago)
+    return render_template('upcoming_comps.html',user_name=session['name'],comps=comps)
+
 @app.route("/competitions/<comp>/admin",methods=['GET','POST'])
 def manage_competition(comp):
     if not is_organiser(comp):
@@ -286,12 +292,6 @@ def import_comp(comp):
             db.session.add(CompetitionOrganizers(user_id=orga_id,competition_id=id))
     db.session.commit()
     return redirect(url_for('manage_competition',comp=id))
-
-
-@app.route('/competitions')
-def competitions():
-    comps = Competitions.query.all()
-    return render_template('upcoming_comps.html',user_name=session['name'],comps=comps)
 
 @app.route('/competitions/<comp>')
 def competition_view(comp):
