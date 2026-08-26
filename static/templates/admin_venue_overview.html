@@ -1,43 +1,55 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<section class="page-header-card">
+    <a href="/competitions/{{competition.id}}" class="text-link">← Back to competition</a>
+    <span class="eyebrow">Organizer Tools</span>
+    <h1>{{competition.name}}</h1>
+    <p class="lead">Control venue visibility, import updates from WCA, and export registrations from one admin dashboard.</p>
+</section>
 
-<a href="/competitions/{{competition.id}}"><h1>{{competition.name}}</h1></a>
-<p>You are currently at the organiser view of the competition.</p>
-
-<p>Change the status of auto acceptance of new venues:</p>
-<form action="/competitions/{{competition.id}}/admin" method="POST">
-    <button type="submit">{{"Require organiser acceptance of new venues" if competition.accepts_new_venues_automatically else "Automatically accept new venues"}}</button>
-</form>
-
-
-<p>Reimport the competition from the WCA (will just update certain values. It will not change the venues):</p>
-<form action="/competitions/{{competition.id}}/admin/import">
-    <button type="submit">Reimport</button>
-</form>
-    <p></p>
-<p>Below are all the venues. You can toggle their visibility.</p>
-
-<h2>Venues:</h2>
-<table>
-    <tr>
-        <th>Venue</th>
-    </tr>
-    {% for venue in venues %}
-    <tr>
-        <td><a href="/competitions/{{competition.id}}/venues/{{venue.id}}/manager">{{ venue }}</a></td>
-        <td>
-        <form method="post" action="/competitions/{{competition.id}}/venues/{{venue.id}}/toggle_visability">
-            <button type="submit">{{"Hide venue" if venue.is_visible else "Make venue public"}}</button>
+<section class="info-grid two-col">
+    <article class="surface-card">
+        <h2>Venue approval mode</h2>
+        <p>Change whether newly submitted venues become public automatically or require organizer review.</p>
+        <form action="/competitions/{{competition.id}}/admin" method="POST">
+            <button type="submit" class="button button-primary">{{"Require organizer acceptance of new venues" if competition.accepts_new_venues_automatically else "Automatically accept new venues"}}</button>
         </form>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+    </article>
 
+    <article class="surface-card">
+        <h2>Data sync and export</h2>
+        <p>Refresh WCA data without changing venues, or export the registration list for downstream workflows.</p>
+        <div class="action-row">
+            <a href="/competitions/{{competition.id}}/admin/import" class="button button-secondary">Reimport from WCA</a>
+            <a href="/competitions/{{competition.id}}/admin/export" class="button button-ghost">Export registrations</a>
+        </div>
+    </article>
+</section>
 
-<form action="/competitions/{{competition.id}}/admin/export">
-    <button type="submit">Get registration export</button>
-</form>
+<section class="table-card">
+    <div class="table-card-header">
+        <h2>Venues</h2>
+        <p>Open a venue to manage it or toggle whether it is visible to competitors.</p>
+    </div>
+    <table>
+        <tr>
+            <th>Venue</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+        {% for venue in venues %}
+        <tr>
+            <td><a href="/competitions/{{competition.id}}/venues/{{venue.id}}/manager" class="text-link">{{ venue }}</a></td>
+            <td><span class="status-badge {{'status-accepted' if venue.is_visible else 'status-pending'}}">{{'Public' if venue.is_visible else 'Hidden'}}</span></td>
+            <td>
+                <form method="post" action="/competitions/{{competition.id}}/venues/{{venue.id}}/toggle_visability">
+                    <button type="submit" class="button button-secondary">{{"Hide venue" if venue.is_visible else "Make venue public"}}</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</section>
 
 {% endblock %}

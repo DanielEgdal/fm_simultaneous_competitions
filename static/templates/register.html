@@ -12,53 +12,75 @@
 {% endblock %}
 
 {% block content %}
+<section class="page-header-card">
+  <a href="/competitions/{{competition.id}}" class="text-link">← Back to competition</a>
+  <span class="eyebrow">Registration</span>
+  <h1>{{competition.name}}</h1>
+  <p class="lead">Choose a venue, review your current status, and update your registration.</p>
+</section>
 
-<a href="/competitions/{{competition.id}}"><h1>{{competition.name}}</h1></a>
+<section class="info-grid two-col">
+  <article class="surface-card">
+    <h2>Registration window</h2>
+    <p><strong>Opens:</strong> {{competition.registration_open}} UTC</p>
+    <p><strong>Closes:</strong> {{competition.registration_close}} UTC</p>
 
-{% if registration%}
-  <p>You are already registered for {{registration.venues}} with a status of {{registration.status}}.
+    {% if opens_in <= 0 and closes_in >= 0 %}
+    <div class="alert alert-success">
+      <strong>Registration is open.</strong>
+      <span>Closes in {{closes_in_formatted}}.</span>
+    </div>
+    {% elif opens_in > 0 %}
+    <div class="alert alert-warning">
+      <strong>Registration has not opened yet.</strong>
+      <span>Opens in {{opens_in_formatted}}.</span>
+    </div>
+    {% else %}
+    <div class="alert alert-muted">
+      <strong>Registration is closed.</strong>
+      <span>No further changes can be submitted.</span>
+    </div>
+    {% endif %}
+  </article>
 
-    {{"The venue requires the delegate to manually accept your registration." if not registration.venues.accept_registrations_automatically}}
+  {% if registration %}
+  <article class="surface-card">
+    <h2>Your current registration</h2>
+    <p>You are registered for <strong>{{registration.venues}}</strong> with status <span class="status-badge {{'status-accepted' if registration.status == 'accepted' else 'status-pending'}}">{{registration.status}}</span>.</p>
+    {% if not registration.venues.accept_registrations_automatically %}
+    <p>This venue requires manual delegate approval.</p>
+    {% endif %}
+    <p>Submitting a new selection replaces your existing registration.</p>
+  </article>
+  {% endif %}
+</section>
 
-  </p>
-<p>Submitting the form below will change your registration.</p>
-<hr>
-{% endif %}
-
-<p>Registration opens <b>{{competition.registration_open}}</b> UTC. Registration closes <b>{{competition.registration_close}}</b> UTC.</p>
-
-{% if opens_in <= 0 and closes_in >= 0%}
-
-<p>Registration closes in {{closes_in_formatted}}.</p>
-
-  <p>Choose your venue below</p>
-
+{% if opens_in <= 0 and closes_in >= 0 %}
+<section class="surface-card form-card">
+  <h2>Choose a venue</h2>
   <form method="post" action="/competitions/{{competition.id}}/register" {{'onsubmit=confirmSubmission(event)' if registration and registration.status != 'deleted'}}>
-      <select name="venues">
-        <option value=""></option>
-        {% for venue in venues %}
-          <option value="{{venue.id}}"">{{venue}}</option>
-        {% endfor %}
-      </select>
-      <p></p>
-      <button type="submit">Register</button>
-    </form>
-
-{% elif opens_in > 0 %}
-
-<p>Registration opens in {{opens_in_formatted}}.</p>
-
-{% else %}
-
-<p>Registtration has already closed.</p>
-
+    <label for="venues">Venue</label>
+    <select id="venues" name="venues">
+      <option value="">Select a venue</option>
+      {% for venue in venues %}
+      <option value="{{venue.id}}">{{venue}}</option>
+      {% endfor %}
+    </select>
+    <div class="action-row">
+      <button type="submit" class="button button-primary">Submit registration</button>
+    </div>
+  </form>
+</section>
 {% endif %}
 
-<hr>
 {% if registration %}
-<form method="post" action="/competitions/{{competition.id}}/register/delete" {{'onsubmit=confirmSubmission(event)' if registration.status != 'deleted'}}>
-  <button type="submit">Cancel my registration</button>
-</form>
+<section class="surface-card form-card danger-card">
+  <h2>Cancel registration</h2>
+  <p>If you no longer want to attend this venue, you can delete your registration.</p>
+  <form method="post" action="/competitions/{{competition.id}}/register/delete" {{'onsubmit=confirmSubmission(event)' if registration.status != 'deleted'}}>
+    <button type="submit" class="button button-danger">Cancel my registration</button>
+  </form>
+</section>
 {% endif %}
 
 {% endblock %}

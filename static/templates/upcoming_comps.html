@@ -1,14 +1,26 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<section class="page-header-card">
+    <span class="eyebrow">Competition Directory</span>
+    <h1>Upcoming simultaneous competitions</h1>
+    <p class="lead">Browse all the upcoming fewest moves simultaneous competitions which are hosted on this site.</p>
+</section>
 
-    <p>Below are the upcoming WCA competitions which are fewest moves simultaneous competitions hosted on this site.</p>
-
-    <p>
-        <ul class="my_comps">
-        {% for comp in comps%}
-            <a href="competitions/{{comp.id}}">{{comp}}</a>
-        {% endfor %}
-        </ul>
-    </p>
+<section class="stack-list">
+    {% for comp in comps %}
+    <a href="competitions/{{comp.id}}" class="list-card">
+        <div>
+            <h2>{{comp.name}}</h2>
+            <p>Start date: {{comp.start_date}}</p>
+        </div>
+        <span class="list-card-arrow">→</span>
+    </a>
+    {% else %}
+    <div class="surface-card empty-state">
+        <h2>No upcoming competitions</h2>
+        <p>There are currently no upcoming competitions hosted on this site.</p>
+    </div>
+    {% endfor %}
+</section>
 {% endblock %}

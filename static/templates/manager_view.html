@@ -1,25 +1,26 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<section class="page-header-card">
+    <a href="/competitions/{{competition.id}}" class="text-link">← Back to competition</a>
+    <span class="eyebrow">Venue Management</span>
+    <h1>{{venue}}</h1>
+    <p class="lead">Manage registrations, edit venue details, and control who can administer this venue.</p>
+    <div class="action-row">
+        <a href="/competitions/{{competition.id}}/venues/{{venue.id}}/registrations" class="button button-primary">Manage registrations</a>
+        <a href="/competitions/{{competition.id}}/venues/{{venue.id}}/edit" class="button button-secondary">Edit venue</a>
+    </div>
+</section>
 
-<a href="/competitions/{{competition.id}}"><h1>{{competition.name}}</h1></a>
-<p>You are currently mangaging the venue <b>{{venue}}</b></p>
-
-    <form action="/competitions/{{competition.id}}/venues/{{venue.id}}/registrations">
-        <input type="submit" value="Manage the registrations" />
-    </form>
-
-    <p></p>
-
-    <form action="/competitions/{{competition.id}}/venues/{{venue.id}}/edit">
-        <input type="submit" value="Edit your venue" />
-    </form>
-
-    <h2>Current Managers:</h2>
+<section class="table-card">
+    <div class="table-card-header">
+        <h2>Current managers</h2>
+    </div>
     <table>
         <tr>
-          <th>Navn</th>
+          <th>Name</th>
           <th>WCA ID</th>
+          <th>Action</th>
         </tr>
         {% for manager in venue_managers %}
         <tr>
@@ -27,20 +28,24 @@
           <td>{{ manager.users.wca_id }}</td>
           <td>
             <form method="post" action="/competitions/{{competition.id}}/venues/{{venue.id}}/manager/delete/{{manager.manager_id}}">
-            <button type="submit">Delete manager</button>
-          </form>
+                <button type="submit" class="button button-danger">Delete manager</button>
+            </form>
           </td>
         </tr>
         {% endfor %}
     </table>
+</section>
 
-    <h2>Add Manager for this venue:</h2>
-    <p>This is also how you add a Delegate</p>
+<section class="surface-card form-card">
+    <h2>Add manager</h2>
+    <p>Use a WCA ID to add a manager or Delegate for this venue.</p>
     <form action="/competitions/{{competition.id}}/venues/{{venue.id}}/manager" method="POST">
-      <label for="user_id">WCA ID:</label>
-      <input type="text" id="wcaid" name="wcaid"><br>
-      
-      <input type="submit" value="Submit">
+        <label for="wcaid">WCA ID</label>
+        <input type="text" id="wcaid" name="wcaid" placeholder="e.g. 2013EGDA01">
+        <div class="action-row">
+            <button type="submit" class="button button-primary">Add manager</button>
+        </div>
     </form>
+</section>
 
 {% endblock %}

@@ -1,53 +1,83 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
-<a href="/competitions/{{competition.id}}"><h1>{{competition.name}}</h1></a>
-<a href="https://www.worldcubeassociation.org/competitions/{{competition.id}}"><h1>WCA Link</h1></a>
-
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    {% for message in messages %}
-      <p class="medlem_info flash_info">{{ message }}</p>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
-
-{% for venue in venues %}
-    {% if admin %}
-            <a href="/competitions/{{competition.id}}/venues/{{venue.id}}/manager">
-                <h2>{{venue}}</h2>
-            </a>
-    {% else %}
-        <h2>{{venue}}</h2>
-    {% endif %}
-    <p>Delegates: {{", ".join(delegates[loop.index0])}}</p>
-    <p>Competitor limit: {{venue.competitor_limit}}</p>
-    <p>Address: {{venue.address}}</p>
-    <p>Timezone: UTC{{venue.timezone}}</p>
-    <div class="basic_box">
-    <p>Registration fee and details: 
-        {% for text in venue.registration_fee_text.split('\\n') %}
-            <p>{{text}}</p>
-        {% endfor %}
-    </p>
+<section class="page-header-card">
+    <div class="title-row">
+        <a href="/competitions/{{competition.id}}" class="text-link">← Back to competition</a>
+        <a href="https://www.worldcubeassociation.org/competitions/{{competition.id}}" target="_blank" class="button button-secondary header-link-button">View on WCA</a>
     </div>
-    <p>Registrations for this venue {{"requires manual acceptance by the delegate." if not venue.accept_registrations_automatically else "are accepted automatically if there is space for it."}}</p>
-    <table class="centered">
-        <tr>
-            <th>Name</th>
-            <th>Registration status</th>
-        </tr>
-    {% for registration in registrations[loop.index0] %}
-            <tr>
-                <td >{{ registration.users.name }}</td>
-                <td >{{ registration.status }}</td>
-            </tr>
-        {% endfor %}
-    </table>
-    <hr>
-    <hr>
+    <span class="eyebrow">Location overview</span>
+    <h1>{{competition.name}}</h1>
+    <p class="lead">See all the locations taking part in this competition!</p>
+</section>
 
+<section class="stack-list venue-stack">
+{% for venue in venues %}
+    <details class="surface-card venue-card venue-panel">
+        <summary class="venue-summary">
+            <div class="venue-summary-main">
+                <h2>{{venue}}</h2>
+                <p>Limit {{venue.competitor_limit}} • UTC{{venue.timezone}}</p>
+            </div>
+            <div class="venue-summary-actions">
+                <span class="status-badge {{'status-accepted' if venue.accept_registrations_automatically else 'status-pending'}}">{{'Auto acceptance' if venue.accept_registrations_automatically else 'Manual acceptance'}}</span>
+                <span class="button button-secondary venue-toggle-label">Expand venue</span>
+            </div>
+        </summary>
+
+        <div class="venue-panel-body">
+            {% if admin %}
+            <div class="action-row admin-venue-actions">
+                <a href="/competitions/{{competition.id}}/venues/{{venue.id}}/manager" class="button button-primary">Manage venue as organizer</a>
+            </div>
+            {% endif %}
+
+            <div class="stats-grid compact-grid">
+                <div class="mini-stat"><span>Delegates</span><strong>{{", ".join(delegates[loop.index0]) if delegates[loop.index0] else 'Not listed'}}</strong></div>
+                <div class="mini-stat"><span>Limit</span><strong>{{venue.competitor_limit}}</strong></div>
+                <div class="mini-stat"><span>Timezone</span><strong>UTC{{venue.timezone}}</strong></div>
+            </div>
+
+            <p><strong>Address:</strong> {{venue.address}}</p>
+
+            <div class="detail-box">
+                <h3>Registration fee and details</h3>
+                {% for text in venue.registration_fee_text.split('\\n') %}
+                    <p>{{text}}</p>
+                {% endfor %}
+            </div>
+
+            <div class="table-card">
+                <div class="table-card-header">
+                    <h3>Accepted registrations</h3>
+                    <p>{{ registrations_accepted[loop.index0] }}/{{ venue.competitor_limit }}</p>
+                    <p>{{"Requires manual delegate approval." if not venue.accept_registrations_automatically else "Accepted automatically while capacity remains."}}</p>
+                </div>
+                <table>
+                    <tr>
+                        <th>Name</th>
+                        <th>Registration status</th>
+                    </tr>
+                    {% for registration in registrations[loop.index0] %}
+                    <tr>
+                        <td>{{ registration.users.name }}</td>
+                        <td><span class="status-badge {{'status-accepted' if registration.status == 'accepted' else 'status-pending'}}">{{ registration.status }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="2">No accepted registrations yet.</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    </details>
+{% else %}
+    <div class="surface-card empty-state">
+        <h2>No venues yet</h2>
+        <p>There are currently no public venues for this competition.</p>
+    </div>
 {% endfor %}
+</section>
 
 {% endblock %}

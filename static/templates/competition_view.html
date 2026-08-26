@@ -1,47 +1,75 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<section class="page-header-card">
+    <div class="title-row header-title-row">
+        <div class="page-title-block">
+            <span class="eyebrow">Competition Overview</span>
+            <h1>{{competition.name}}</h1>
+        </div>
+        <a href="https://www.worldcubeassociation.org/competitions/{{competition.id}}" target="_blank" class="button button-secondary header-link-button">View on WCA</a>
+    </div>
 
-<h1>{{competition.name}}</h1>
-    <p>There are currently {{venue_count}} venues!</p> 
-    <form action="/competitions/{{competition.id}}/venues">
-        <input type="submit" value="See venues" />
-    </form>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-label">Locations</span>
+            <strong>{{venue_count}}</strong>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Registration opens (UTC)</span>
+            <strong>{{competition.registration_open.strftime("%Y-%m-%d %H:%M:%S") if competition.registration_open else 'Configured'}}</strong>
+        </div>
+    </div>
+    <div class="action-row">
+        <a href="/competitions/{{competition.id}}/venues" class="button button-primary">See venues</a>
+        <a href="/competitions/{{competition.id}}/register" class="button button-secondary">Go to registration</a>
+    </div>
+</section>
 
-    <p></p>
+{% if registration and registration.status != 'deleted' %}
+<section class="alert {{'alert-success' if registration.status == 'accepted' else 'alert-warning'}}">
+    <span>You registered for {{registration.venues}} and your current status is {{registration.status}}.</span>
+</section>
+{% elif not user_name %}
+<section class="alert alert-muted">
+    <strong>You are not signed in.</strong>
+    <span>Log in with WCA to register or manage venues.</span>
+</section>
+{% else %}
+<section class="alert alert-danger-soft">
+    <span>You have not registered for any venue in this competition.</span>
+</section>
+{% endif %}
 
-    <form action="/competitions/{{competition.id}}/register">
-        <input type="submit" value="Go to the register page" />
-    </form>
-
-    {% if registration and registration.status != 'deleted' %}
-    <p class="medlem_info {{'active_member' if registration.status == 'accepted' else 'inactive_member'}}">You have submitted a registration for the venue  <b class=" {{'active_member' if registration.status == 'accepted' else 'inactive_member'}}">&nbsp;{{registration.venues}}</b>. 
-        The status of your registration is <b class="{{'active_member' if registration.status == 'accepted' else 'inactive_member'}}">&nbsp;{{registration.status}}</b></p>
-    {% elif not user_name %}
-    <p class="medlem_info inactive_member">You are not currently signed in.</p>
-    {% else %}
-    <p class="medlem_info non_member"> You are currently not registered for any venue.</p>
-    {% endif %}
-
+<section class="info-grid two-col">
     {% if manager_venue %}
-    <p>You are a manager of  <b>{{manager_venue.venues}}</b></p>
-    <form action="/competitions/{{competition.id}}/venues/{{manager_venue.venues.id}}/manager">
-        <input type="submit" value="Go to manage your venue" />
-    </form>
+    <article class="surface-card">
+        <h2>Your venue access</h2>
+        <p>You are currently managing <strong>{{manager_venue.venues}}</strong>.</p>
+        <div class="action-row">
+            <a href="/competitions/{{competition.id}}/venues/{{manager_venue.venues.id}}/manager" class="button button-secondary">Manage your venue</a>
+        </div>
+    </article>
     {% endif %}
 
     {% if (delegate and delegate != 'trainee_delegate' and not manager_venue) or admin %}
-    <p>As you are a Delegate, you can go to the page below to submit a new venue.</p>
-    <form action="/competitions/{{competition.id}}/venues/new">
-        <input type="submit" value="Go to create venue" />
-    </form>
+    <article class="surface-card">
+        <h2>Create a venue</h2>
+        <p>WCA Delegates can submit a new venue for this competition while the submission window is still open.</p>
+        <div class="action-row">
+            <a href="/competitions/{{competition.id}}/venues/new" class="button button-secondary">Create venue</a>
+        </div>
+    </article>
     {% endif %}
 
-    <br>
     {% if admin %}
-    <form action="/competitions/{{competition.id}}/admin">
-        <button type="submit">Go to the admin view of the competition</button>
-    </form>
+    <article class="surface-card">
+        <h2>Organizer tools</h2>
+        <p>Open the competition admin area to control visibility, imports, and exports.</p>
+        <div class="action-row">
+            <a href="/competitions/{{competition.id}}/admin" class="button button-ghost">Open admin view</a>
+        </div>
+    </article>
     {% endif %}
-    
+</section>
 {% endblock %}

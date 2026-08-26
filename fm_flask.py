@@ -28,10 +28,9 @@ app.config.update(
 
 init_db(app)
 
-# TODO call for generating all content for a locations tab on wca.
+# TODO Make link for generating all content for a locations tab on wca.
 # TODO admin button to check if every user account got a wcaid before import
 # TODO some check that if venue limit is increased, or a reg is deleted, such that the waiting list is handled.
-# TODO add back link to WCA website
 
 with app.app_context():
     db.create_all()
@@ -112,10 +111,7 @@ def give_name():
 
 @app.route('/')
 def home():
-    if not is_logged_in():
-        return render_template('index.html',user_name=session['name'])
-    else:
-        return redirect(url_for('competitions'))
+    return render_template('index.html',user_name=session['name'])
 
 def get_me(header):
     return requests.get("https://api.worldcubeassociation.org/me",headers=header)
@@ -199,7 +195,7 @@ def get_organisers_wcif(wcif):
 
 @app.route('/competitions')
 def competitions():
-    one_day_ago = datetime.datetime.today() - datetime.timedelta(days=1)
+    one_day_ago = datetime.date.today() - datetime.timedelta(days=1)
     comps = Competitions.query.filter(Competitions.start_date>one_day_ago)
     return render_template('upcoming_comps.html',user_name=session['name'],comps=comps)
 
@@ -329,7 +325,7 @@ def competition_new(comp):
             timezone = form_data['timezone']
             reg_fee_txt = form_data['reg_fee']
             auto_accept = True if request.form.getlist("auto_accept") else False
-            new_venue_id = max([venue.id for venue in Venues.query.all()])+1
+            new_venue_id = max([venue.id for venue in Venues.query.all()]+[0])+1
             venue = Venues(id=new_venue_id,competition_id=comp,country=country,city=city,
                 address=address,competitor_limit=limit,
                 accept_registrations_automatically=auto_accept,
@@ -377,6 +373,7 @@ def comp_venues(comp):
 
     venues = Venues.query.filter_by(competition_id=comp,is_visible=True).order_by(Venues.country).all()
     registrations = [Registrations.query.filter_by(venue_id=venue.id,status='accepted').order_by(Registrations.created_at) for venue in venues]
+    registrations_accepted = [len(Registrations.query.filter_by(venue_id=venue.id,status='accepted').order_by(Registrations.created_at).all()) for venue in venues]
     delegates = []
 
     for venue in venues:
@@ -385,7 +382,9 @@ def comp_venues(comp):
             if manager.users.delegate_status:
                 tmp_delegates.append(manager.users.name)
         delegates.append(tmp_delegates)
-    return render_template('venues.html',user_name=session['name'],venues=venues,competition=competition, registrations=registrations, delegates=delegates,admin=is_organiser(comp))
+    return render_template('venues.html',user_name=session['name'],
+                           venues=venues,competition=competition, registrations=registrations, registrations_accepted=registrations_accepted,
+                           delegates=delegates, admin=is_organiser(comp))
 
 @app.route('/competitions/<comp>/venues/<int:venue_id>/manager',methods=['GET','POST'])
 @logged_in_required

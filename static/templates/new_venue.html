@@ -1,47 +1,50 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<section class="page-header-card">
+    <a href="/competitions/{{competition.id}}" class="text-link">← Back to competition</a>
+    <span class="eyebrow">Create Venue</span>
+    <h1>{{competition.name}}</h1>
+    {% if not competition.accepts_new_venues_automatically %}
+    <p>The organisers of this competition does <b>not</b> have auto acceptance on for this competition.
+      Before submitting a venue, please reach out to them so they are aware.</p>
+    {% else %}
+    <p>Before submitting a venue, please ensure that your region falls within the scope of this competition.
+      Consider checking the WCA website if certain conditions need to be met for submitting a venue.</p>
+    {% endif %}
+</section>
 
-<a href="/competitions/{{competition.id}}"><h1>{{competition.name}}</h1></a>
+<section class="surface-card form-card">
+    <h2>Venue details</h2>
+    <form method="post" action="/competitions/{{competition.id}}/venues/new">
+        <label for="country">Country</label>
+        <input type="text" id="country" name="country">
 
-{% if not competition.accepts_new_venues_automatically %}
-<p>
-  The organisers of this competition does <b>not</b> have auto acceptance on for this competition.
-  Before submitting a venue, please reach out to them so they are aware.
-</p>
-{% else %}
-<p>
-  Before submitting a venue, please ensure that your region falls within the scope of this competition.
-  Consider checking the WCA website if certain conditions need to be met for submitting a venue.
-</p>
-{% endif %}
+        <label for="city">City, state or region</label>
+        <input type="text" id="city" name="city">
 
-<p>Submit your venue information below</p>
+        <label for="address">Address</label>
+        <input type="text" id="address" name="address">
 
-<form method="post" action="/competitions/{{competition.id}}/venues/new">
-  <p> Country
-    <input type="text" name="country">
-  </p>
-  <p> City, State (if needed)
-    <input type="text" name="city">
-  </p>
-  <p> Address (you can write private residence)
-    <input type="text" name="address">
-  </p>
-  <p> Competitor limit
-    <input type="number" name="limit">
-  </p>
-  <p> Timezone (UTC notation, but only include the +- and number, e.g. `+1`)
-    <input type="text" name="timezone">
-  </p>
-  <p> Registration fee and details</p>
-    <textarea name="reg_fee"></textarea>
-  <p class="form_info">Hint, write '\n' to write multilpe lines.</p>
-  <p> Accept registrations automatically
-    <input type="checkbox" name="auto_accept" checked>
-  </p>
-  
-    <button type="submit">Submit</button>
-  </form>
+        <label for="limit">Competitor limit</label>
+        <input type="number" id="limit" name="limit">
+
+        <label for="timezone">Timezone offset</label>
+        <input type="text" id="timezone" name="timezone" placeholder="+1">
+
+        <label for="reg_fee">Registration fee and details</label>
+        <textarea id="reg_fee" name="reg_fee"></textarea>
+        <p class="form_info">Use \n to create multiple lines in the venue details.</p>
+
+        <label class="checkbox-row" for="auto_accept">
+            <input type="checkbox" id="auto_accept" name="auto_accept" checked>
+            <span>Accept registrations automatically when capacity is available</span>
+        </label>
+
+        <div class="action-row">
+            <button type="submit" class="button button-primary">Submit venue</button>
+        </div>
+    </form>
+</section>
 
 {% endblock %}
