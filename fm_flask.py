@@ -478,7 +478,7 @@ def format_seconds(seconds):
     seconds = int(seconds)
     return f"{days} days, {hours} hours, {minutes} minutes, {seconds} seconds"
 
-def get_coordinates_for_venues(compid, venues):
+def get_coordinates_for_venues(venues):
     geolocator = Nominatim(user_agent="fm_venue_application")
     time_zone_finder = TimezoneFinder() 
     locations = []
@@ -512,7 +512,7 @@ def get_coordinates_for_venues(compid, venues):
 @admin_required
 def update_schedule_wca(compid):
     venues = Venues.query.filter_by(competition_id=compid).filter_by(is_visible=True).all()
-    locations,timezones = get_coordinates_for_venues(compid=compid,venues=venues)
+    locations,timezones = get_coordinates_for_venues(venues=venues) # TODO, consider not getting coordinates for every venue. Only those where something changed.
     # print(len(venues),len(locations),len(timezones))
     wcif = comp_json = json.loads(requests.get(f"https://www.worldcubeassociation.org/api/v0/competitions/{compid}/wcif",headers=session['token']).content)
     schedule = wcif['schedule']
@@ -528,7 +528,14 @@ def update_schedule_wca(compid):
                      "longitudeMicrodegrees": int(locations[idx][1]*1_000_000),
                      "countryIso2": pycountry.countries.search_fuzzy(venue.country)[0].alpha_2,
                      "timezone":timezones[idx],
-                     "rooms":[],
+                     "rooms":[
+                         {"color": "#304a96",
+                        "extensions": [],
+                        "id": ((len(schedule['venues'])+1)*1000) +1,
+                        "name": name,
+                        "activities": []
+                        }
+                     ],
                      "extensions":[
                          {"id":"FM_simul_comps", "specUrl": "https://fm.danskspeedcubingforening.dk/", "data":{"venue_id":venue.id}}
                      ]}
